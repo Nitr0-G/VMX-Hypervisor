@@ -1,0 +1,146 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Driver Files">
+      <UniqueIdentifier>{8E41214B-6785-4CFE-B992-037D68949A14}</UniqueIdentifier>
+      <Extensions>inf;inv;inx;mof;mc;</Extensions>
+    </Filter>
+    <Filter Include="Header Files\HyperVisor">
+      <UniqueIdentifier>{256bbfc8-b2bc-41ee-9cde-bcd912e8976a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\HyperVisor\CommonApi">
+      <UniqueIdentifier>{9a282e47-4aa0-45ce-a8a6-0eb91a9ad590}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\HyperVisor\CommonTypes">
+      <UniqueIdentifier>{389ba1ef-836b-46a6-8c55-75794e416a67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\HyperVisor\CppSupport">
+      <UniqueIdentifier>{39f7b7af-51f5-4b57-8d69-cefeb75aceaf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\HyperVisor">
+      <UniqueIdentifier>{36f54c14-aa30-464a-a073-31f89a9986b7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\HyperVisor\CommonTypes">
+      <UniqueIdentifier>{d3a3b18d-c7f7-4090-8697-9e51a024a5fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\HyperVisor\CppSupport">
+      <UniqueIdentifier>{af7e2c16-f2c3-4f20-ba95-13163f7148ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\HyperVisor\CommonApi">
+      <UniqueIdentifier>{81bb507e-e4a5-401c-930e-e801bc1a4431}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Inf Include="VMX-Hypervisor.inf">
+      <Filter>Driver Files</Filter>
+    </Inf>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="example\Simple example\DrvMain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="include\HyperVisor\Ept.cpp">
+      <Filter>Source Files\HyperVisor</Filter>
+    </ClCompile>
+    <ClCompile Include="include\HyperVisor\HyperVisor.cpp">
+      <Filter>Source Files\HyperVisor</Filter>
+    </ClCompile>
+    <ClCompile Include="include\HyperVisor\CppSupport\CppSupport.cpp">
+      <Filter>Source Files\HyperVisor\CppSupport</Filter>
+    </ClCompile>
+    <ClCompile Include="include\HyperVisor\CommonTypes\AsmFuncs.cpp">
+      <Filter>Source Files\HyperVisor\CommonTypes</Filter>
+    </ClCompile>
+    <ClCompile Include="include\HyperVisor\CommonApi\Callable.cpp">
+      <Filter>Source Files\HyperVisor\CommonApi</Filter>
+    </ClCompile>
+    <ClCompile Include="include\HyperVisor\CommonApi\MemoryUtils.cpp">
+      <Filter>Source Files\HyperVisor\CommonApi</Filter>
+    </ClCompile>
+    <ClCompile Include="include\HyperVisor\CommonApi\PteUtils.cpp">
+      <Filter>Source Files\HyperVisor\CommonApi</Filter>
+    </ClCompile>
+    <ClCompile Include="include\HyperVisor\CommonApi\SystemMemory.cpp">
+      <Filter>Source Files\HyperVisor\CommonApi</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="example\Simple example\GuestContext.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HyperVisor\Ept.hpp">
+      <Filter>Header Files\HyperVisor</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HyperVisor\General.hpp">
+      <Filter>Header Files\HyperVisor</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HyperVisor\HyperVisor.hpp">
+      <Filter>Header Files\HyperVisor</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HyperVisor\CppSupport\CppSupport.hpp">
+      <Filter>Header Files\HyperVisor\CppSupport</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HyperVisor\CommonTypes\AsmFuncs.hpp">
+      <Filter>Header Files\HyperVisor\CommonTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HyperVisor\CommonTypes\CPUID.hpp">
+      <Filter>Header Files\HyperVisor\CommonTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HyperVisor\CommonTypes\Exception.hpp">
+      <Filter>Header Files\HyperVisor\CommonTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HyperVisor\CommonTypes\Hyper-V.hpp">
+      <Filter>Header Files\HyperVisor\CommonTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HyperVisor\CommonTypes\Interrupts.hpp">
+      <Filter>Header Files\HyperVisor\CommonTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HyperVisor\CommonTypes\MSR.hpp">
+      <Filter>Header Files\HyperVisor\CommonTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HyperVisor\CommonTypes\PTE.hpp">
+      <Filter>Header Files\HyperVisor\CommonTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HyperVisor\CommonTypes\Registers.hpp">
+      <Filter>Header Files\HyperVisor\CommonTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HyperVisor\CommonTypes\Segmentation.hpp">
+      <Filter>Header Files\HyperVisor\CommonTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HyperVisor\CommonTypes\VMX.hpp">
+      <Filter>Header Files\HyperVisor\CommonTypes</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HyperVisor\CommonApi\Callable.hpp">
+      <Filter>Header Files\HyperVisor\CommonApi</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HyperVisor\CommonApi\MemoryUtils.hpp">
+      <Filter>Header Files\HyperVisor\CommonApi</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HyperVisor\CommonApi\PteUtils.hpp">
+      <Filter>Header Files\HyperVisor\CommonApi</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HyperVisor\CommonApi\SystemMemory.hpp">
+      <Filter>Header Files\HyperVisor\CommonApi</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="example\Simple example\VMXrun.asm">
+      <Filter>Header Files</Filter>
+    </MASM>
+    <MASM Include="include\HyperVisor\CommonTypes\AsmFuncs.asm">
+      <Filter>Header Files\HyperVisor\CommonTypes</Filter>
+    </MASM>
+  </ItemGroup>
+</Project>
