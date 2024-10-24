@@ -136,11 +136,8 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <MASM Include="example\Simple example\VMXrun.asm">
-      <Filter>Header Files</Filter>
-    </MASM>
-    <MASM Include="include\HyperVisor\CommonTypes\AsmFuncs.asm">
-      <Filter>Header Files\HyperVisor\CommonTypes</Filter>
+    <MASM Include="include\HyperVisor\VMXrun.asm">
+      <Filter>Source Files\HyperVisor</Filter>
     </MASM>
   </ItemGroup>
 </Project>

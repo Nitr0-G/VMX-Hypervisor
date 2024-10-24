@@ -19,6 +19,8 @@ DefaultDestDir = 13
 
 [SourceDisksFiles]
 
+[Manufacturer]
+
 [Strings]
-ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
+ManufacturerName="MARIUS" ;TODO: Replace with your manufacturer name
 DiskName="VMX-Hypervisor Source Disk"
