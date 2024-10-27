@@ -1,5 +1,6 @@
 #include "GuestContext.hpp"
 #include "include/HyperVisor/HyperVisor.hpp"
+#include <CppSupport/CppSupport.hpp>
 
 HyperVisorVmx objHyperVisorVmx;
 extern VMX::SHARED_VM_DATA g_Shared;
@@ -677,16 +678,100 @@ extern "C" VMM_STATUS VmxVmExitHandler(VMX::PRIVATE_VM_DATA* Private, __inout Gu
 //Define in asm file(in my example)
 extern "C" void VmxVmmRun(_In_ void* InitialVmmStackPointer);
 
-extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObj, PUNICODE_STRING RegisterPath)
+
+/////////////////////////////////////////////////////////////////////////DRIVER INIT SECTION
+
+void DrvUnload(_In_ PDRIVER_OBJECT DriverObj)
+{
+    UNREFERENCED_PARAMETER(DriverObj);
+    KdPrint(("Sample driver Unload called\n"));
+}
+
+NTSTATUS DrvUnsupported(PDEVICE_OBJECT DeviceObject, PIRP Irp)
+{
+    UNREFERENCED_PARAMETER(DeviceObject);
+    Irp->IoStatus.Status = STATUS_SUCCESS;
+    Irp->IoStatus.Information = 0;
+    IoCompleteRequest(Irp, IO_NO_INCREMENT);
+
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS DrvDispatchIoControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
+{
+    PIO_STACK_LOCATION IrpStack;
+    //PREGISTER_EVENT RegisterEvent;
+    NTSTATUS Status = STATUS_SUCCESS;
+    UNREFERENCED_PARAMETER(DeviceObject);
+
+    IrpStack = IoGetCurrentIrpStackLocation(Irp);
+
+    switch (IrpStack->Parameters.DeviceIoControl.IoControlCode)
+    {
+
+    }
+
+    return Status;
+}
+
+NTSTATUS DrvClose(PDEVICE_OBJECT DeviceObject, PIRP Irp)
+{
+    UNREFERENCED_PARAMETER(DeviceObject);
+    Irp->IoStatus.Status = STATUS_SUCCESS;
+    Irp->IoStatus.Information = 0;
+    IoCompleteRequest(Irp, IO_NO_INCREMENT);
+
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS DrvCreate(PDEVICE_OBJECT DeviceObject, PIRP Irp)
+{
+    UNREFERENCED_PARAMETER(DeviceObject);
+
+    objHyperVisorVmx.PInterceptions = &Interceptions;
+    objHyperVisorVmx.PInitHandlersTable = &VmExit::InitHandlersTable;
+    objHyperVisorVmx.PVmxVmmRun = &VmxVmmRun;
+
+    if (objHyperVisorVmx.IsVmxSupported()) { objHyperVisorVmx.VirtualizeAllProcessors(); }
+
+    Irp->IoStatus.Status = STATUS_SUCCESS;
+    Irp->IoStatus.Information = 0;
+    IoCompleteRequest(Irp, IO_NO_INCREMENT);
+
+    return STATUS_SUCCESS;
+}
+
+extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegisterPath)
 {
 	UNREFERENCED_PARAMETER(RegisterPath);
+    NTSTATUS Ntstatus = STATUS_SUCCESS;
+    PDEVICE_OBJECT DeviceObject = NULL; 
+    UNICODE_STRING DriverName, DosDeviceName;
 
-	objHyperVisorVmx.PInterceptions = &Interceptions;
-    objHyperVisorVmx.PInitHandlersTable = &VmExit::InitHandlersTable;
-	objHyperVisorVmx.PVmxVmmRun = &VmxVmmRun;
+    RtlInitUnicodeString(&DriverName, L"\\Device\\MyHypervisorDevice");
+    RtlInitUnicodeString(&DosDeviceName, L"\\DosDevices\\MyHypervisorDevice");
 
-	if (objHyperVisorVmx.IsVmxSupported()) { objHyperVisorVmx.VirtualizeAllProcessors(); }
-	DriverObj->DriverUnload = DriverUnload;
+    Ntstatus = IoCreateDevice(DriverObject, 0, &DriverName, FILE_DEVICE_UNKNOWN, FILE_DEVICE_SECURE_OPEN, FALSE, &DeviceObject);
+    __crt_init();
+    if (Ntstatus == STATUS_SUCCESS)
+    {
+        for (UINT64 Index = 0; Index < IRP_MJ_MAXIMUM_FUNCTION; Index++) { DriverObject->MajorFunction[Index] = DrvUnsupported; }
 
-	return STATUS_SUCCESS;
+        DriverObject->MajorFunction[IRP_MJ_CLOSE] = DrvClose;
+        DriverObject->MajorFunction[IRP_MJ_CREATE] = DrvCreate;
+        DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = DrvDispatchIoControl;
+        DriverObject->DriverUnload = DrvUnload;
+        IoCreateSymbolicLink(&DosDeviceName, &DriverName);
+    }
+
+    return STATUS_SUCCESS;
+
+	//objHyperVisorVmx.PInterceptions = &Interceptions;
+    //objHyperVisorVmx.PInitHandlersTable = &VmExit::InitHandlersTable;
+	//objHyperVisorVmx.PVmxVmmRun = &VmxVmmRun;
+
+	//if (objHyperVisorVmx.IsVmxSupported()) { objHyperVisorVmx.VirtualizeAllProcessors(); }
+	//DriverObject->DriverUnload = DriverUnload;
+
+	//return STATUS_SUCCESS;
 }
