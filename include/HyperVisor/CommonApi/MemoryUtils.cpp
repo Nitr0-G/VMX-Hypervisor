@@ -4,7 +4,6 @@
 #include "CommonTypes/PTE.hpp"
 #include "CommonApi/PteUtils.hpp"
 #include "CommonApi/MemoryUtils.hpp"
-#include "General.hpp"
 
 namespace VirtualMemory {
 /*

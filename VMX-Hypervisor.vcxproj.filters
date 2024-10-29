@@ -41,6 +41,15 @@
     <Filter Include="Source Files\HyperVisor\CommonApi">
       <UniqueIdentifier>{81bb507e-e4a5-401c-930e-e801bc1a4431}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\AddinFrameWorkSample">
+      <UniqueIdentifier>{23dad559-3b1f-459c-bd73-75e91dbed899}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\AddinFrameWorkSample">
+      <UniqueIdentifier>{4571b386-4b3d-42de-934a-8871d3d85e2c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\AddinFrameWorkSample\Shared">
+      <UniqueIdentifier>{85fa1fbe-a969-4dd9-b8c6-0a1def0a6014}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Inf Include="VMX-Hypervisor.inf">
@@ -48,9 +57,6 @@
     </Inf>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="example\Simple example\DrvMain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="include\HyperVisor\Ept.cpp">
       <Filter>Source Files\HyperVisor</Filter>
     </ClCompile>
@@ -75,11 +81,17 @@
     <ClCompile Include="include\HyperVisor\CommonApi\SystemMemory.cpp">
       <Filter>Source Files\HyperVisor\CommonApi</Filter>
     </ClCompile>
+    <ClCompile Include="example\Simple example\Driver\Src\DrvMain.cpp">
+      <Filter>Source Files\AddinFrameWorkSample</Filter>
+    </ClCompile>
+    <ClCompile Include="example\Simple example\Driver\Src\Hpv.cpp">
+      <Filter>Source Files\AddinFrameWorkSample</Filter>
+    </ClCompile>
+    <ClCompile Include="example\Simple example\Driver\Src\IOCTLHandlers.cpp">
+      <Filter>Source Files\AddinFrameWorkSample</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="example\Simple example\GuestContext.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\HyperVisor\Ept.hpp">
       <Filter>Header Files\HyperVisor</Filter>
     </ClInclude>
@@ -133,6 +145,21 @@
     </ClInclude>
     <ClInclude Include="include\HyperVisor\CommonApi\SystemMemory.hpp">
       <Filter>Header Files\HyperVisor\CommonApi</Filter>
+    </ClInclude>
+    <ClInclude Include="example\Simple example\Shared\IOCTLs.hpp">
+      <Filter>Header Files\AddinFrameWorkSample\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="example\Simple example\Driver\Inc\GuestContext.hpp">
+      <Filter>Header Files\AddinFrameWorkSample</Filter>
+    </ClInclude>
+    <ClInclude Include="example\Simple example\Driver\Inc\Hpv.hpp">
+      <Filter>Header Files\AddinFrameWorkSample</Filter>
+    </ClInclude>
+    <ClInclude Include="example\Simple example\Driver\Inc\IOCTLHandlers.hpp">
+      <Filter>Header Files\AddinFrameWorkSample</Filter>
+    </ClInclude>
+    <ClInclude Include="example\Simple example\Shared\CtlTypes.hpp">
+      <Filter>Header Files\AddinFrameWorkSample\Shared</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -117,7 +117,9 @@
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="example\Simple example\DrvMain.cpp" />
+    <ClCompile Include="example\Simple example\Driver\Src\DrvMain.cpp" />
+    <ClCompile Include="example\Simple example\Driver\Src\Hpv.cpp" />
+    <ClCompile Include="example\Simple example\Driver\Src\IOCTLHandlers.cpp" />
     <ClCompile Include="include\HyperVisor\CommonApi\Callable.cpp" />
     <ClCompile Include="include\HyperVisor\CommonApi\MemoryUtils.cpp" />
     <ClCompile Include="include\HyperVisor\CommonApi\PteUtils.cpp" />
@@ -128,7 +130,11 @@
     <ClCompile Include="include\HyperVisor\HyperVisor.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="example\Simple example\GuestContext.hpp" />
+    <ClInclude Include="example\Simple example\Driver\Inc\GuestContext.hpp" />
+    <ClInclude Include="example\Simple example\Driver\Inc\Hpv.hpp" />
+    <ClInclude Include="example\Simple example\Driver\Inc\IOCTLHandlers.hpp" />
+    <ClInclude Include="example\Simple example\Shared\CtlTypes.hpp" />
+    <ClInclude Include="example\Simple example\Shared\IOCTLs.hpp" />
     <ClInclude Include="include\HyperVisor\CommonApi\Callable.hpp" />
     <ClInclude Include="include\HyperVisor\CommonApi\MemoryUtils.hpp" />
     <ClInclude Include="include\HyperVisor\CommonApi\PteUtils.hpp" />

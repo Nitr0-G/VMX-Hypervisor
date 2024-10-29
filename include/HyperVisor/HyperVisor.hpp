@@ -50,7 +50,6 @@ size_t vmread(_In_ size_t field);
 
 class HyperVisorVmx {
 private:
-	CpuVendor GetCpuVendor();
 	bool VirtualizeProcessor();
 	bool DevirtualizeProcessor(__out PVOID& PrivateVmData);
 
@@ -92,13 +91,14 @@ private:
 	CONTROLS_MASK GetCr0Mask();
 
 private:
-	static inline volatile bool g_IsVirtualized;
 	_VmxVmmRun VmxVmmRun; _Interceptions Interceptions;
 public:
+	static inline volatile bool g_IsVirtualized = false;
 	_InitHandlersTable InitHandlersTable;
 	PVOID PVmxVmmRun = nullptr, PInterceptions = nullptr, PInitHandlersTable = nullptr;
 public:
 	bool DevirtualizeAllProcessors();
 	bool VirtualizeAllProcessors();
 	bool IsVmxSupported();
+	CpuVendor GetCpuVendor();
 };

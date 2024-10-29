@@ -1,16 +1,7 @@
-#include "GuestContext.hpp"
-#include "include/HyperVisor/HyperVisor.hpp"
-#include <CppSupport/CppSupport.hpp>
+#include "Driver/Inc/Hpv.hpp"
 
 HyperVisorVmx objHyperVisorVmx;
 extern VMX::SHARED_VM_DATA g_Shared;
-
-
-void DriverUnload(_In_ PDRIVER_OBJECT DriverObj)
-{
-	UNREFERENCED_PARAMETER(DriverObj);
-	KdPrint(("Sample driver Unload called\n"));
-}
 
 void InjectEvent(VMX::INTERRUPTION_TYPE Type, INTERRUPT_VECTOR Vector, bool DeliverErrorCode, unsigned int ErrorCode)
 {
@@ -130,8 +121,8 @@ unsigned long long* GetRegPtr(unsigned char RegNum, __in GuestContext* Context)
 // Exit action for the SvmVmexitHandler/VmxVmexitHandler:
 enum class VMM_STATUS : bool
 {
-	VMM_SHUTDOWN = false, // Devirtualize the current logical processor
-	VMM_CONTINUE = true   // Continue execution in the virtualized environment
+    VMM_SHUTDOWN = false, // Devirtualize the current logical processor
+    VMM_CONTINUE = true   // Continue execution in the virtualized environment
 };
 
 using FnVmexitHandler = VMM_STATUS(*)(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction);
@@ -224,8 +215,8 @@ namespace Supplementation
 
 namespace VmExit {
     _IRQL_requires_same_
-    _IRQL_requires_min_(DISPATCH_LEVEL)
-    static VMM_STATUS EmptyHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
+        _IRQL_requires_min_(DISPATCH_LEVEL)
+        static VMM_STATUS EmptyHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
     {
         UNREFERENCED_PARAMETER(Private);
         UNREFERENCED_PARAMETER(Context);
@@ -238,18 +229,18 @@ namespace VmExit {
     }
 
     _IRQL_requires_same_
-    _IRQL_requires_min_(DISPATCH_LEVEL)
-    static VMM_STATUS CpuidHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
+        _IRQL_requires_min_(DISPATCH_LEVEL)
+        static VMM_STATUS CpuidHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
     {
         //UNREFERENCED_PARAMETER(RepeatInstruction);
 
         CPUID_REGS Regs = {};
-		int Function = static_cast<int>(Context->Rax);
-		int SubLeaf = static_cast<int>(Context->Rcx);
-		__cpuidex(Regs.Raw, Function, SubLeaf);
+        int Function = static_cast<int>(Context->Rax);
+        int SubLeaf = static_cast<int>(Context->Rcx);
+        __cpuidex(Regs.Raw, Function, SubLeaf);
 
-		if (Function == CPUID_VMM_SHUTDOWN) 
-        { 
+        if (Function == CPUID_VMM_SHUTDOWN)
+        {
             Rip += vmread(VMX::VMCS_FIELD_VMEXIT_INSTRUCTION_LENGTH);
 
             size_t Rsp = vmread(VMX::VMCS_FIELD_GUEST_RSP);
@@ -274,20 +265,20 @@ namespace VmExit {
 
             RepeatInstruction = true;
         }
-		else 
-		{
-			Context->Rax = Regs.Regs.Eax;
-			Context->Rbx = Regs.Regs.Ebx;
-			Context->Rcx = Regs.Regs.Ecx;
-			Context->Rdx = Regs.Regs.Edx;
-		}
+        else
+        {
+            Context->Rax = Regs.Regs.Eax;
+            Context->Rbx = Regs.Regs.Ebx;
+            Context->Rcx = Regs.Regs.Ecx;
+            Context->Rdx = Regs.Regs.Edx;
+        }
 
         return VMM_STATUS::VMM_CONTINUE;
     }
 
     _IRQL_requires_same_
-    _IRQL_requires_min_(DISPATCH_LEVEL)
-    static VMM_STATUS XsetbvHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout bool& RepeatInstruction)
+        _IRQL_requires_min_(DISPATCH_LEVEL)
+        static VMM_STATUS XsetbvHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout bool& RepeatInstruction)
     {
         UNREFERENCED_PARAMETER(Private);
         UNREFERENCED_PARAMETER(Rip);
@@ -298,8 +289,8 @@ namespace VmExit {
     }
 
     _IRQL_requires_same_
-    _IRQL_requires_min_(DISPATCH_LEVEL)
-    static VMM_STATUS EptViolationHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
+        _IRQL_requires_min_(DISPATCH_LEVEL)
+        static VMM_STATUS EptViolationHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
     {
         UNREFERENCED_PARAMETER(Context);
         UNREFERENCED_PARAMETER(RepeatInstruction);
@@ -396,8 +387,8 @@ namespace VmExit {
     }
 
     _IRQL_requires_same_
-    _IRQL_requires_min_(DISPATCH_LEVEL)
-    static VMM_STATUS EptMisconfigurationHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
+        _IRQL_requires_min_(DISPATCH_LEVEL)
+        static VMM_STATUS EptMisconfigurationHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
     {
         UNREFERENCED_PARAMETER(Context);
         UNREFERENCED_PARAMETER(Rip);
@@ -416,8 +407,8 @@ namespace VmExit {
     }
 
     _IRQL_requires_same_
-    _IRQL_requires_min_(DISPATCH_LEVEL)
-    static VMM_STATUS MonitorTrapFlagHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
+        _IRQL_requires_min_(DISPATCH_LEVEL)
+        static VMM_STATUS MonitorTrapFlagHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
     {
         UNREFERENCED_PARAMETER(Context);
 
@@ -429,8 +420,8 @@ namespace VmExit {
     }
 
     _IRQL_requires_same_
-    _IRQL_requires_min_(DISPATCH_LEVEL)
-    static VMM_STATUS ExceptionOrNmiHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
+        _IRQL_requires_min_(DISPATCH_LEVEL)
+        static VMM_STATUS ExceptionOrNmiHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
     {
         UNREFERENCED_PARAMETER(Private);
         UNREFERENCED_PARAMETER(Context);
@@ -441,8 +432,8 @@ namespace VmExit {
     }
 
     _IRQL_requires_same_
-    _IRQL_requires_min_(DISPATCH_LEVEL)
-    static VMM_STATUS VmcallHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
+        _IRQL_requires_min_(DISPATCH_LEVEL)
+        static VMM_STATUS VmcallHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
     {
         UNREFERENCED_PARAMETER(Private);
         UNREFERENCED_PARAMETER(Rip);
@@ -513,8 +504,8 @@ namespace VmExit {
     }
 
     _IRQL_requires_same_
-    _IRQL_requires_min_(DISPATCH_LEVEL)
-    static VMM_STATUS RdmsrHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
+        _IRQL_requires_min_(DISPATCH_LEVEL)
+        static VMM_STATUS RdmsrHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
     {
         UNREFERENCED_PARAMETER(Private);
         UNREFERENCED_PARAMETER(Rip);
@@ -539,8 +530,8 @@ namespace VmExit {
     }
 
     _IRQL_requires_same_
-    _IRQL_requires_min_(DISPATCH_LEVEL)
-    static VMM_STATUS WrmsrHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
+        _IRQL_requires_min_(DISPATCH_LEVEL)
+        static VMM_STATUS WrmsrHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
     {
         UNREFERENCED_PARAMETER(Private);
         UNREFERENCED_PARAMETER(Rip);
@@ -557,8 +548,8 @@ namespace VmExit {
     }
 
     _IRQL_requires_same_
-    _IRQL_requires_min_(DISPATCH_LEVEL)
-    static VMM_STATUS VmxRelatedHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
+        _IRQL_requires_min_(DISPATCH_LEVEL)
+        static VMM_STATUS VmxRelatedHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
     {
         UNREFERENCED_PARAMETER(Private);
         UNREFERENCED_PARAMETER(Context);
@@ -614,41 +605,44 @@ namespace VmExit {
 }
 
 void Interceptions(
-	_In_ Intel::IA32_VMX_BASIC VmxBasicInfo)
+    _In_ Intel::IA32_VMX_BASIC VmxBasicInfo)
 {
-	VMX::PIN_BASED_VM_EXECUTION_CONTROLS PinControls = {};
-	PinControls = GetControlMask::ApplyMask(PinControls, GetControlMask::GetPinControlsMask(VmxBasicInfo));
-	__vmx_vmwrite(VMX::VMCS_FIELD_PIN_BASED_VM_EXECUTION_CONTROLS, PinControls.Value);
+    VMX::PIN_BASED_VM_EXECUTION_CONTROLS PinControls = {};
+    PinControls = GetControlMask::ApplyMask(PinControls, GetControlMask::GetPinControlsMask(VmxBasicInfo));
+    __vmx_vmwrite(VMX::VMCS_FIELD_PIN_BASED_VM_EXECUTION_CONTROLS, PinControls.Value);
 
-	VMX::PRIMARY_PROCESSOR_BASED_VM_EXECUTION_CONTROLS PrimaryControls = {};
-	PrimaryControls.Bitmap.UseMsrBitmaps = TRUE;
-	PrimaryControls.Bitmap.ActivateSecondaryControls = TRUE;
-	PrimaryControls = GetControlMask::ApplyMask(PrimaryControls, GetControlMask::GetPrimaryControlsMask(VmxBasicInfo));
-	__vmx_vmwrite(VMX::VMCS_FIELD_PRIMARY_PROCESSOR_BASED_VM_EXECUTION_CONTROLS, PrimaryControls.Value);
+    VMX::PRIMARY_PROCESSOR_BASED_VM_EXECUTION_CONTROLS PrimaryControls = {};
+    PrimaryControls.Bitmap.UseMsrBitmaps = TRUE;
+    PrimaryControls.Bitmap.ActivateSecondaryControls = TRUE;
+    PrimaryControls = GetControlMask::ApplyMask(PrimaryControls, GetControlMask::GetPrimaryControlsMask(VmxBasicInfo));
+    __vmx_vmwrite(VMX::VMCS_FIELD_PRIMARY_PROCESSOR_BASED_VM_EXECUTION_CONTROLS, PrimaryControls.Value);
 
-	VMX::VMEXIT_CONTROLS VmexitControls = {};
-	VmexitControls.Bitmap.SaveDebugControls = TRUE;
-	VmexitControls.Bitmap.HostAddressSpaceSize = TRUE;
-	VmexitControls = GetControlMask::ApplyMask(VmexitControls, GetControlMask::GetVmexitControlsMask(VmxBasicInfo));
-	__vmx_vmwrite(VMX::VMCS_FIELD_VMEXIT_CONTROLS, VmexitControls.Value);
+    VMX::VMEXIT_CONTROLS VmexitControls = {};
+    VmexitControls.Bitmap.SaveDebugControls = TRUE;
+    VmexitControls.Bitmap.HostAddressSpaceSize = TRUE;
+    VmexitControls = GetControlMask::ApplyMask(VmexitControls, GetControlMask::GetVmexitControlsMask(VmxBasicInfo));
+    __vmx_vmwrite(VMX::VMCS_FIELD_VMEXIT_CONTROLS, VmexitControls.Value);
 
-	VMX::VMENTRY_CONTROLS VmentryControls = {};
-	VmentryControls.Bitmap.LoadDebugControls = TRUE;
-	VmentryControls.Bitmap.Ia32ModeGuest = TRUE;
-	VmentryControls = GetControlMask::ApplyMask(VmentryControls, GetControlMask::GetVmentryControlsMask(VmxBasicInfo));
-	__vmx_vmwrite(VMX::VMCS_FIELD_VMENTRY_CONTROLS, VmentryControls.Value);
+    VMX::VMENTRY_CONTROLS VmentryControls = {};
+    VmentryControls.Bitmap.LoadDebugControls = TRUE;
+    VmentryControls.Bitmap.Ia32ModeGuest = TRUE;
+    VmentryControls = GetControlMask::ApplyMask(VmentryControls, GetControlMask::GetVmentryControlsMask(VmxBasicInfo));
+    __vmx_vmwrite(VMX::VMCS_FIELD_VMENTRY_CONTROLS, VmentryControls.Value);
 
-	VMX::SECONDARY_PROCESSOR_BASED_VM_EXECUTION_CONTROLS SecondaryControls = {};
-	SecondaryControls.Bitmap.EnableEpt = TRUE;
-	SecondaryControls.Bitmap.EnableRdtscp = TRUE;
-	SecondaryControls.Bitmap.EnableVpid = TRUE;
-	SecondaryControls.Bitmap.EnableInvpcid = TRUE;
-	SecondaryControls.Bitmap.EnableVmFunctions = TRUE;
-	SecondaryControls.Bitmap.EptViolation = FALSE;
-	SecondaryControls.Bitmap.EnableXsavesXrstors = TRUE;
-	SecondaryControls = GetControlMask::ApplyMask(SecondaryControls, GetControlMask::GetSecondaryControlsMask());
-	__vmx_vmwrite(VMX::VMCS_FIELD_SECONDARY_PROCESSOR_BASED_VM_EXECUTION_CONTROLS, SecondaryControls.Value);
+    VMX::SECONDARY_PROCESSOR_BASED_VM_EXECUTION_CONTROLS SecondaryControls = {};
+    SecondaryControls.Bitmap.EnableEpt = TRUE;
+    SecondaryControls.Bitmap.EnableRdtscp = TRUE;
+    SecondaryControls.Bitmap.EnableVpid = TRUE;
+    SecondaryControls.Bitmap.EnableInvpcid = TRUE;
+    SecondaryControls.Bitmap.EnableVmFunctions = TRUE;
+    SecondaryControls.Bitmap.EptViolation = FALSE;
+    SecondaryControls.Bitmap.EnableXsavesXrstors = TRUE;
+    SecondaryControls = GetControlMask::ApplyMask(SecondaryControls, GetControlMask::GetSecondaryControlsMask());
+    __vmx_vmwrite(VMX::VMCS_FIELD_SECONDARY_PROCESSOR_BASED_VM_EXECUTION_CONTROLS, SecondaryControls.Value);
 }
+
+//Define in asm file(in my example)
+extern "C" void VmxVmmRun(_In_ void* InitialVmmStackPointer);
 
 _IRQL_requires_same_
 _IRQL_requires_min_(HIGH_LEVEL)
@@ -675,103 +669,53 @@ extern "C" VMM_STATUS VmxVmExitHandler(VMX::PRIVATE_VM_DATA* Private, __inout Gu
     return Status;
 }
 
-//Define in asm file(in my example)
-extern "C" void VmxVmmRun(_In_ void* InitialVmmStackPointer);
-
-
-/////////////////////////////////////////////////////////////////////////DRIVER INIT SECTION
-
-void DrvUnload(_In_ PDRIVER_OBJECT DriverObj)
+namespace HyperVisor
 {
-    UNREFERENCED_PARAMETER(DriverObj);
-    KdPrint(("Sample driver Unload called\n"));
-}
-
-NTSTATUS DrvUnsupported(PDEVICE_OBJECT DeviceObject, PIRP Irp)
-{
-    UNREFERENCED_PARAMETER(DeviceObject);
-    Irp->IoStatus.Status = STATUS_SUCCESS;
-    Irp->IoStatus.Information = 0;
-    IoCompleteRequest(Irp, IO_NO_INCREMENT);
-
-    return STATUS_SUCCESS;
-}
-
-NTSTATUS DrvDispatchIoControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
-{
-    PIO_STACK_LOCATION IrpStack;
-    //PREGISTER_EVENT RegisterEvent;
-    NTSTATUS Status = STATUS_SUCCESS;
-    UNREFERENCED_PARAMETER(DeviceObject);
-
-    IrpStack = IoGetCurrentIrpStackLocation(Irp);
-
-    switch (IrpStack->Parameters.DeviceIoControl.IoControlCode)
+    bool IsVirtualized()
     {
-
+#ifdef _AMD64_
+        return HyperVisorVmx::g_IsVirtualized;
+#else
+        return false;
+#endif
     }
 
-    return Status;
-}
-
-NTSTATUS DrvClose(PDEVICE_OBJECT DeviceObject, PIRP Irp)
-{
-    UNREFERENCED_PARAMETER(DeviceObject);
-    Irp->IoStatus.Status = STATUS_SUCCESS;
-    Irp->IoStatus.Information = 0;
-    IoCompleteRequest(Irp, IO_NO_INCREMENT);
-
-    return STATUS_SUCCESS;
-}
-
-NTSTATUS DrvCreate(PDEVICE_OBJECT DeviceObject, PIRP Irp)
-{
-    UNREFERENCED_PARAMETER(DeviceObject);
-
-    objHyperVisorVmx.PInterceptions = &Interceptions;
-    objHyperVisorVmx.PInitHandlersTable = &VmExit::InitHandlersTable;
-    objHyperVisorVmx.PVmxVmmRun = &VmxVmmRun;
-
-    if (objHyperVisorVmx.IsVmxSupported()) { objHyperVisorVmx.VirtualizeAllProcessors(); }
-
-    Irp->IoStatus.Status = STATUS_SUCCESS;
-    Irp->IoStatus.Information = 0;
-    IoCompleteRequest(Irp, IO_NO_INCREMENT);
-
-    return STATUS_SUCCESS;
-}
-
-extern "C" NTSTATUS DriverEntry(_In_ PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegisterPath)
-{
-	UNREFERENCED_PARAMETER(RegisterPath);
-    NTSTATUS Ntstatus = STATUS_SUCCESS;
-    PDEVICE_OBJECT DeviceObject = NULL; 
-    UNICODE_STRING DriverName, DosDeviceName;
-
-    RtlInitUnicodeString(&DriverName, L"\\Device\\MyHypervisorDevice");
-    RtlInitUnicodeString(&DosDeviceName, L"\\DosDevices\\MyHypervisorDevice");
-
-    Ntstatus = IoCreateDevice(DriverObject, 0, &DriverName, FILE_DEVICE_UNKNOWN, FILE_DEVICE_SECURE_OPEN, FALSE, &DeviceObject);
-    __crt_init();
-    if (Ntstatus == STATUS_SUCCESS)
+    bool Virtualize()
     {
-        for (UINT64 Index = 0; Index < IRP_MJ_MAXIMUM_FUNCTION; Index++) { DriverObject->MajorFunction[Index] = DrvUnsupported; }
+#ifdef _AMD64_
+        if (IsVirtualized()) return false;
 
-        DriverObject->MajorFunction[IRP_MJ_CLOSE] = DrvClose;
-        DriverObject->MajorFunction[IRP_MJ_CREATE] = DrvCreate;
-        DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = DrvDispatchIoControl;
-        DriverObject->DriverUnload = DrvUnload;
-        IoCreateSymbolicLink(&DosDeviceName, &DriverName);
+        CpuVendor CpuVendor = objHyperVisorVmx.GetCpuVendor();
+        if (CpuVendor == CpuVendor::CpuUnknown) return false;
+
+        bool Status = false;
+        if (CpuVendor == CpuVendor::CpuIntel)
+        {
+            if (!objHyperVisorVmx.IsVmxSupported()) return false;
+
+            objHyperVisorVmx.PInterceptions = &Interceptions;
+            objHyperVisorVmx.PInitHandlersTable = &VmExit::InitHandlersTable;
+            objHyperVisorVmx.PVmxVmmRun = &VmxVmmRun;
+
+            Status = objHyperVisorVmx.VirtualizeAllProcessors();
+        }
+
+        return Status;
+#else
+        return false;
+#endif
     }
 
-    return STATUS_SUCCESS;
-
-	//objHyperVisorVmx.PInterceptions = &Interceptions;
-    //objHyperVisorVmx.PInitHandlersTable = &VmExit::InitHandlersTable;
-	//objHyperVisorVmx.PVmxVmmRun = &VmxVmmRun;
-
-	//if (objHyperVisorVmx.IsVmxSupported()) { objHyperVisorVmx.VirtualizeAllProcessors(); }
-	//DriverObject->DriverUnload = DriverUnload;
-
-	//return STATUS_SUCCESS;
+    bool Devirtualize()
+    {
+#ifdef _AMD64_
+        if (IsVirtualized())
+        {
+            objHyperVisorVmx.DevirtualizeAllProcessors();
+        }
+        return true;
+#else
+        return false;
+#endif
+    }
 }

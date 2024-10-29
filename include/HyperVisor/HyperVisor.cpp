@@ -102,7 +102,8 @@ PVOID HyperVisorVmx::AllocPhys(
         Size,
         CachingType
     );
-    if (Memory) RtlSecureZeroMemory(Memory, Size);
+
+    if (Memory) { RtlSecureZeroMemory(Memory, Size); }
     return Memory;
 }
 
@@ -493,6 +494,7 @@ bool HyperVisorVmx::VirtualizeProcessor()
     __vmx_vmwrite(VMX::VMCS_FIELD_EPT_POINTER_FULL, Eptp.Value);
     Private->EptInterceptor->CompleteInitialization(Eptp);
     //////////////////////////////////////////////////////////////////////////////////////////////////////CONTROLS
+
     Interceptions = reinterpret_cast<_Interceptions>(PInterceptions);
     Interceptions(VmxBasicInfo);
     //////////////////////////////////////////////////////////////////////////////////////////////////////CONTROLS
@@ -510,6 +512,7 @@ bool HyperVisorVmx::VirtualizeProcessor()
     __vmx_vmwrite(VMX::VMCS_FIELD_HOST_IA32_SYSENTER_ESP, SysenterEsp);
     __vmx_vmwrite(VMX::VMCS_FIELD_HOST_IA32_SYSENTER_EIP, SysenterEip);
     __vmx_vmwrite(VMX::VMCS_FIELD_HOST_RSP, reinterpret_cast<unsigned long long>(&Private->VmmStack.Layout.InitialStack));
+    VmxVmmRun = reinterpret_cast<_VmxVmmRun>(PVmxVmmRun);
     __vmx_vmwrite(VMX::VMCS_FIELD_HOST_RIP, reinterpret_cast<unsigned long long>(VmxVmmRun));
 
     InterlockedExchange(&IsVirtualized, TRUE);
