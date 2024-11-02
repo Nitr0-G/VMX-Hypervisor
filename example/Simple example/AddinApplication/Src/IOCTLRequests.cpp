@@ -39,7 +39,7 @@ namespace Process
 {
     BOOL WINAPI MvGetProcessCr3(
         ULONG ProcessId,
-        OUT OPTIONAL PUINT64 Cr3,
+        OUT PUINT64 Cr3,
         Cr3GetMode Mode
     )
     {
@@ -50,6 +50,20 @@ namespace Process
         Input.Mode = Mode;
         BOOL Status = MvSendRequest(Ctls::MvGetProcessCr3, &Input, sizeof(Input), &Output, sizeof(Output));
         if (Cr3) *Cr3 = Output.Cr3;
+        return Status;
+    }
+
+    BOOL WINAPI MvGetEProcess(
+        ULONG ProcessId,
+        OUT PVOID Eprocess
+    )
+    {
+        if (!ProcessId) return FALSE;
+        MV_GET_EPROCESS_IN Input = {};
+        MV_GET_EPROCESS_OUT Output = {};
+        Input.ProcessId = ProcessId;
+        BOOL Status = MvSendRequest(Ctls::MvGetProcessCr3, &Input, sizeof(Input), &Output, sizeof(Output));
+        Eprocess = Output.EPROCESS;
         return Status;
     }
 }

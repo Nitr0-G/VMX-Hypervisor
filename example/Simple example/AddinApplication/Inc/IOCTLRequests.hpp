@@ -23,8 +23,13 @@ namespace Process
 {
     BOOL WINAPI MvGetProcessCr3(
         ULONG ProcessId,
-        OUT OPTIONAL PUINT64 Cr3,
+        OUT PUINT64 Cr3,
         Cr3GetMode Mode
+    );
+
+    BOOL WINAPI MvGetEProcess(
+        ULONG ProcessId,
+        OUT PVOID Eprocess
     );
 }
 

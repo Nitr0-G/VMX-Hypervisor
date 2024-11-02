@@ -20,6 +20,7 @@ namespace Ctls
 
         // Processes & Threads:
         /* 8 */ MvGetProcessCr3,
+        /* 9 */ MvGetEprocess,
     };
 }
 
@@ -69,6 +70,14 @@ DECLARE_STRUCT(MV_GET_PROCESS_CR3_IN, {
 
 DECLARE_STRUCT(MV_GET_PROCESS_CR3_OUT, {
     UINT64 Cr3;
+    });
+
+DECLARE_STRUCT(MV_GET_EPROCESS_IN, {
+    UINT64 ProcessId;
+    });
+
+DECLARE_STRUCT(MV_GET_EPROCESS_OUT, {
+    PVOID EPROCESS;
     });
 
 DECLARE_STRUCT(MV_NATIVE_TRANSLATE_PROCESS_VIRTUAL_ADDRESS_TO_PHYSICAL_ADDRESS_IN, {

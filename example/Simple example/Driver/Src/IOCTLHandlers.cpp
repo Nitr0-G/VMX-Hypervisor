@@ -155,6 +155,26 @@ namespace IOCTLFuncs
         return STATUS_SUCCESS;
     }
 
+    NTSTATUS FASTCALL MvGetEprocess(IN PIOCTL_INFO RequestInfo, OUT PSIZE_T ResponseLength)
+    {
+        if (
+            RequestInfo->InputBufferSize != sizeof(MV_GET_EPROCESS_IN) ||
+            RequestInfo->OutputBufferSize != sizeof(MV_GET_EPROCESS_OUT)
+            ) return STATUS_INFO_LENGTH_MISMATCH;
+
+        auto Input = static_cast<PMV_GET_EPROCESS_IN>(RequestInfo->InputBuffer);
+        auto Output = static_cast<PMV_GET_EPROCESS_OUT>(RequestInfo->OutputBuffer);
+
+        if (!Input || !Output || !Input->ProcessId) return STATUS_INVALID_PARAMETER;
+
+        PEPROCESS Process = Processes::Descriptors::GetEPROCESS(reinterpret_cast<HANDLE>(Input->ProcessId));
+        if (!Process) return STATUS_NOT_FOUND;
+
+        Output->EPROCESS = (PVOID)Process;
+        *ResponseLength = RequestInfo->OutputBufferSize;
+        return STATUS_SUCCESS;
+    }
+
     NTSTATUS FASTCALL MvNativeTranslateProcessVirtualAddrToPhysicalAddr(IN PIOCTL_INFO RequestInfo, OUT PSIZE_T ResponseLength)
     {
         if (
@@ -195,7 +215,8 @@ NTSTATUS FASTCALL DispatchIOCTL(IN PIOCTL_INFO RequestInfo, OUT PSIZE_T Response
         IOCTLFuncs::MvNativeTranslateProcessVirtualAddrToPhysicalAddr,
 
         // Processes & Threads:
-        IOCTLFuncs::MvGetProcessCr3
+        IOCTLFuncs::MvGetProcessCr3,
+        IOCTLFuncs::MvGetEprocess
     };
 
     USHORT Index = EXTRACT_CTL_CODE(RequestInfo->ControlCode) - CTL_BASE;

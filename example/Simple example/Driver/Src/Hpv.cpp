@@ -425,7 +425,7 @@ namespace VmExit {
     {
         UNREFERENCED_PARAMETER(Context);
         CR3 GuestCr3 = (CR3)vmread(VMX::VMCS_FIELD_GUEST_CR3);
-        if (HyperVisor::TraceProcess::In->Cr3 == GuestCr3.Value)
+        if (HyperVisor::TraceProcess::In != nullptr && HyperVisor::TraceProcess::In->Cr3 == GuestCr3.Value)
         {
             HyperVisor::TraceProcess::Out->Rip = (PVOID)Rip;
             memcpy(HyperVisor::TraceProcess::Out->Opcodes, (PVOID)Rip, MAX_INSTRUCTION_LENGTH);
