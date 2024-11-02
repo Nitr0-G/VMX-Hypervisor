@@ -117,6 +117,9 @@
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="example\Simple example\Driver\Src\CommonApi\Importer.cpp" />
+    <ClCompile Include="example\Simple example\Driver\Src\CommonApi\ProcessesUtils.cpp" />
+    <ClCompile Include="example\Simple example\Driver\Src\Cr3Get.cpp" />
     <ClCompile Include="example\Simple example\Driver\Src\DrvMain.cpp" />
     <ClCompile Include="example\Simple example\Driver\Src\Hpv.cpp" />
     <ClCompile Include="example\Simple example\Driver\Src\IOCTLHandlers.cpp" />
@@ -130,11 +133,16 @@
     <ClCompile Include="include\HyperVisor\HyperVisor.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="example\Simple example\AddinApplication\Inc\ASMFuncs.hpp" />
+    <ClInclude Include="example\Simple example\Driver\Inc\CommonApi\Importer.hpp" />
+    <ClInclude Include="example\Simple example\Driver\Inc\CommonApi\ProcessesUtils.hpp" />
+    <ClInclude Include="example\Simple example\Driver\Inc\Cr3Get.hpp" />
     <ClInclude Include="example\Simple example\Driver\Inc\GuestContext.hpp" />
     <ClInclude Include="example\Simple example\Driver\Inc\Hpv.hpp" />
     <ClInclude Include="example\Simple example\Driver\Inc\IOCTLHandlers.hpp" />
     <ClInclude Include="example\Simple example\Shared\CtlTypes.hpp" />
     <ClInclude Include="example\Simple example\Shared\IOCTLs.hpp" />
+    <ClInclude Include="example\Simple example\Shared\WdkTypes.hpp" />
     <ClInclude Include="include\HyperVisor\CommonApi\Callable.hpp" />
     <ClInclude Include="include\HyperVisor\CommonApi\MemoryUtils.hpp" />
     <ClInclude Include="include\HyperVisor\CommonApi\PteUtils.hpp" />
@@ -155,6 +163,7 @@
     <ClInclude Include="include\HyperVisor\HyperVisor.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <MASM Include="example\Simple example\AddinApplication\Inc\ASMFuncs.asm" />
     <MASM Include="include\HyperVisor\VMXrun.asm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

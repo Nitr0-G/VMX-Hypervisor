@@ -1,19 +1,26 @@
 #pragma once
-#include "GuestContext.hpp"
 #include "include/HyperVisor/HyperVisor.hpp"
 
-//namespace VmExit {
-//    void InitHandlersTable();
-//}
-//
-//void Interceptions(
-//    _In_ Intel::IA32_VMX_BASIC VmxBasicInfo);
-//
-////Define in asm file(in my example)
-//extern "C" void VmxVmmRun(_In_ void* InitialVmmStackPointer);
+#include "GuestContext.hpp"
+#include "Shared/CtlTypes.hpp"
 
 namespace HyperVisor {
     bool IsVirtualized();
     bool Virtualize();
     bool Devirtualize();
+    bool InterceptPage(
+        unsigned long long Pa,
+        unsigned long long ReadPa,
+        unsigned long long WritePa,
+        unsigned long long ExecutePa,
+        unsigned long long ExecuteReadPa,
+        unsigned long long ExecuteWritePa
+    );
+    bool DeinterceptPage(
+        unsigned long long Pa
+    );
+    bool Trace(
+        PMV_VMM_TRACE_PROCESS_IN Input,
+        PMV_VMM_TRACE_PROCESS_OUT Output
+    );
 }

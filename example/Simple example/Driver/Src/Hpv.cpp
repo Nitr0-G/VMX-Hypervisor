@@ -3,6 +3,19 @@
 HyperVisorVmx objHyperVisorVmx;
 extern VMX::SHARED_VM_DATA g_Shared;
 
+namespace HyperVisor
+{
+    namespace TraceProcess
+    {
+        bool RepeatMtfExit = false;
+        bool InMtfExit = false;
+        bool EnabledMtfTrace = false;
+
+        PMV_VMM_TRACE_PROCESS_IN In = nullptr;
+        PMV_VMM_TRACE_PROCESS_OUT Out = nullptr;
+    }
+}
+
 void InjectEvent(VMX::INTERRUPTION_TYPE Type, INTERRUPT_VECTOR Vector, bool DeliverErrorCode, unsigned int ErrorCode)
 {
     VMX::VMENTRY_INTERRUPTION_INFORMATION Event = {};
@@ -407,15 +420,39 @@ namespace VmExit {
     }
 
     _IRQL_requires_same_
-        _IRQL_requires_min_(DISPATCH_LEVEL)
-        static VMM_STATUS MonitorTrapFlagHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
+    _IRQL_requires_min_(DISPATCH_LEVEL)
+    static VMM_STATUS MonitorTrapFlagHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
     {
         UNREFERENCED_PARAMETER(Context);
+        CR3 GuestCr3 = (CR3)vmread(VMX::VMCS_FIELD_GUEST_CR3);
+        if (HyperVisor::TraceProcess::In->Cr3 == GuestCr3.Value)
+        {
+            HyperVisor::TraceProcess::Out->Rip = (PVOID)Rip;
+            memcpy(HyperVisor::TraceProcess::Out->Opcodes, (PVOID)Rip, MAX_INSTRUCTION_LENGTH);
+            HyperVisor::TraceProcess::Out->InstrLength = vmread(VMX::VMCS_FIELD_VMEXIT_INSTRUCTION_LENGTH);
 
-        Private->EptInterceptor->CompletePendingHandler(reinterpret_cast<void*>(Rip));
-        DisableMonitorTrapFlag();
-        EnableGuestInterrupts();
-        RepeatInstruction = true;
+            HyperVisor::TraceProcess::InMtfExit = true;
+            while (HyperVisor::TraceProcess::EnabledMtfTrace && !HyperVisor::TraceProcess::RepeatMtfExit)
+            {
+                continue;
+            }
+
+            HyperVisor::TraceProcess::RepeatMtfExit = false;
+            Private->EptInterceptor->CompletePendingHandler(reinterpret_cast<void*>(Rip));
+            if (HyperVisor::TraceProcess::In->AddrEnd == (PVOID)Rip)
+            {
+                DisableMonitorTrapFlag();
+            }
+            EnableGuestInterrupts();
+            RepeatInstruction = true;
+        }
+        else
+        {
+            Private->EptInterceptor->CompletePendingHandler(reinterpret_cast<void*>(Rip));
+            DisableMonitorTrapFlag();
+            EnableGuestInterrupts();
+            RepeatInstruction = true;
+        }
         return VMM_STATUS::VMM_CONTINUE;
     }
 
@@ -428,12 +465,47 @@ namespace VmExit {
         UNREFERENCED_PARAMETER(Rip);
         UNREFERENCED_PARAMETER(RepeatInstruction);
 
+        VMX::VMENTRY_INTERRUPTION_INFORMATION Exception = (VMX::VMENTRY_INTERRUPTION_INFORMATION)vmread(VMX::VMCS_FIELD_EXCEPTION_BITMAP);
+        VMX::INTERRUPTION_TYPE InterruptionType = (VMX::INTERRUPTION_TYPE)Exception.Bitmap.InterruptionType;
+        INTERRUPT_VECTOR InterruptionVector = (INTERRUPT_VECTOR)Exception.Bitmap.VectorOfInterruptOrException;
+
+        if (InterruptionType == VMX::INTERRUPTION_TYPE::HardwareException)
+        {
+            if (InterruptionVector == INTERRUPT_VECTOR::PageFault)
+            {
+                const VMX::PAGE_FAULT_ERROR_CODE FaultCode = (VMX::PAGE_FAULT_ERROR_CODE)vmread(VMX::VMCS_FIELD_PAGE_FAULT_ERROR_CODE_MASK);
+                const size_t FaultAddress = vmread(VMX::VMCS_FIELD_EXIT_QUALIFICATION);
+
+                InjectEvent(InterruptionType, InterruptionVector, true, FaultCode.Value);
+                __writecr2(FaultAddress);
+            }
+            else if (InterruptionVector == INTERRUPT_VECTOR::GeneralProtection)
+            {
+                const UINT32 ErrorCode = (UINT32)vmread(VMX::VMCS_FIELD_PAGE_FAULT_ERROR_CODE_MASK);
+
+                InjectEvent(InterruptionType, InterruptionVector, true, ErrorCode);
+            }
+            //else if (InterruptionVector == INTERRUPT_VECTOR::Debug)
+            //{
+            //NOT SUPPORTED
+            //}
+        }
+        else if (InterruptionType == VMX::INTERRUPTION_TYPE::SoftwareException)
+        {
+            if (InterruptionVector == INTERRUPT_VECTOR::Breakpoint)
+            {
+                InjectEvent(InterruptionType, InterruptionVector, false, 0);
+                const size_t ExitInstrLen = vmread(VMX::VMCS_FIELD_VMEXIT_INSTRUCTION_LENGTH);
+                __vmx_vmwrite(VMX::VMCS_FIELD_VMEXIT_INSTRUCTION_LENGTH, ExitInstrLen);
+            }
+        }
+
         return VMM_STATUS::VMM_CONTINUE;
     }
 
     _IRQL_requires_same_
-        _IRQL_requires_min_(DISPATCH_LEVEL)
-        static VMM_STATUS VmcallHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
+    _IRQL_requires_min_(DISPATCH_LEVEL)
+    static VMM_STATUS VmcallHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
     {
         UNREFERENCED_PARAMETER(Private);
         UNREFERENCED_PARAMETER(Rip);
@@ -455,12 +527,21 @@ namespace VmExit {
                     Cr3 = __readcr3();
                     __writecr3(vmread(VMX::VMCS_FIELD_GUEST_CR3));
                 }
-
+                
                 Context->Rax = Fn(Arg);
 
                 if (SwitchToCallerAddressSpace)
                 {
                     __writecr3(Cr3);
+                }
+                break;
+            }
+            case VMCALLS::VMCALL_INDEX::MtfEnable:
+            {
+                CR3 GuestCr3 = (CR3)vmread(VMX::VMCS_FIELD_GUEST_CR3);
+                if (HyperVisor::TraceProcess::In->Cr3 == GuestCr3.Value)
+                {
+                    EnableMonitorTrapFlag();
                 }
                 break;
             }
@@ -671,6 +752,50 @@ extern "C" VMM_STATUS VmxVmExitHandler(VMX::PRIVATE_VM_DATA* Private, __inout Gu
 
 namespace HyperVisor
 {
+    bool InternalInterceptPage(
+        unsigned long long PagePa,
+        __in_opt unsigned long long OnReadPa,
+        __in_opt unsigned long long OnWritePa,
+        __in_opt unsigned long long OnExecutePa,
+        __in_opt unsigned long long OnExecuteReadPa,
+        __in_opt unsigned long long OnExecuteWritePa
+    )
+    {
+        struct INTERCEPT_INFO
+        {
+            unsigned long long Pa;
+            unsigned long long R, W, X, RX, WX;
+        };
+
+        INTERCEPT_INFO Info = { PagePa, OnReadPa, OnWritePa, OnExecutePa, OnExecuteReadPa, OnExecuteWritePa };
+        Callable::DpcOnEachCpu([](void* Arg)
+            {
+                VMCALLS::VmmCall([](void* Arg) -> unsigned long long
+                    {
+                        auto* Info = reinterpret_cast<INTERCEPT_INFO*>(Arg);
+                        g_Shared.Processors[KeGetCurrentProcessorNumber()].VmData->EptInterceptor->InterceptPage(Info->Pa, Info->R, Info->W, Info->X, Info->RX, Info->WX);
+                        return 0;
+                    }, Arg);
+            }, &Info);
+
+        return true;
+    }
+
+    void InternalDeinterceptPage(
+        unsigned long long PagePa
+    )
+    {
+        Callable::DpcOnEachCpu([](void* Arg)
+            {
+                VMCALLS::VmmCall([](void* Arg) -> unsigned long long
+                    {
+                        auto Page = reinterpret_cast<unsigned long long>(Arg);
+                        g_Shared.Processors[KeGetCurrentProcessorNumber()].VmData->EptInterceptor->DeinterceptPage(Page);
+                        return 0;
+                    }, Arg);
+            }, reinterpret_cast<void*>(PagePa));
+    }
+
     bool IsVirtualized()
     {
 #ifdef _AMD64_
@@ -698,9 +823,9 @@ namespace HyperVisor
             objHyperVisorVmx.PVmxVmmRun = &VmxVmmRun;
 
             Status = objHyperVisorVmx.VirtualizeAllProcessors();
+            return Status;
         }
-
-        return Status;
+        return false;
 #else
         return false;
 #endif
@@ -717,5 +842,60 @@ namespace HyperVisor
 #else
         return false;
 #endif
+    }
+
+    bool InterceptPage(
+        unsigned long long Pa,
+        unsigned long long ReadPa,
+        unsigned long long WritePa,
+        unsigned long long ExecutePa,
+        unsigned long long ExecuteReadPa,
+        unsigned long long ExecuteWritePa
+    ) 
+    {
+#ifdef _AMD64_
+        CpuVendor CpuVendor = objHyperVisorVmx.GetCpuVendor();
+
+        if (CpuVendor == CpuVendor::CpuIntel)
+        {
+            return InternalInterceptPage(Pa, ReadPa, WritePa, ExecutePa, ExecuteReadPa, ExecuteWritePa);
+        }
+        return false;
+#else
+        // Unreferenced parameters:
+        Pa; ReadPa; WritePa; ExecutePa; ExecuteReadPa; ExecuteWritePa;
+        return false;
+#endif
+    }
+
+    bool DeinterceptPage(
+        unsigned long long Pa
+    )
+    {
+#ifdef _AMD64_
+        CpuVendor CpuVendor = objHyperVisorVmx.GetCpuVendor();
+
+        if (CpuVendor == CpuVendor::CpuIntel)
+        {
+            InternalDeinterceptPage(Pa);
+            return true;
+        }
+        return false;
+#else
+        Pa;
+        return false;
+#endif
+    }
+
+    bool Trace(
+        PMV_VMM_TRACE_PROCESS_IN Input,
+        PMV_VMM_TRACE_PROCESS_OUT Output
+    )
+    {
+        HyperVisor::TraceProcess::EnabledMtfTrace = true;
+        HyperVisor::TraceProcess::In = Input;
+        HyperVisor::TraceProcess::Out = Output;
+
+        return true;
     }
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include "PTE.hpp"
 
 namespace Pte
 {

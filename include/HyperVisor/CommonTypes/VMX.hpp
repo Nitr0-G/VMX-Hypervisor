@@ -607,6 +607,19 @@ namespace VMX
     };
     static_assert(sizeof(SECONDARY_PROCESSOR_BASED_VM_EXECUTION_CONTROLS) == sizeof(unsigned int), "Size of SECONDARY_PROCESSOR_BASED_VM_EXECUTION_CONTROLS != sizeof(unsigned int)");
 
+    /// See: Page-Fault Error Code
+    union PAGE_FAULT_ERROR_CODE {
+        ULONG32 Value;
+        struct {
+            ULONG32 Present : 1;   //!< [1] 0= NotPresent
+            ULONG32 Write : 1;     //!< [2] 0= Read
+            ULONG32 User : 1;      //!< [3] 0= CPL==0
+            ULONG32 Reserved : 1;  //!< [4]
+            ULONG32 Fetch : 1;     //!< [5]
+        } Fields;
+    };
+    static_assert(sizeof(PAGE_FAULT_ERROR_CODE) == 4, "Size check");
+
     enum class INTERRUPTION_TYPE {
         ExternalInterrupt = 0,
         Reserved = 1,

@@ -199,6 +199,9 @@ namespace PhysicalMemory {
 
     _IRQL_requires_max_(APC_LEVEL)
     BOOLEAN WritePhysicalMemory(OUT PVOID64 PhysicalAddress, IN PVOID Buffer, SIZE_T Length, MEMORY_CACHING_TYPE CachingType);
+
+    _IRQL_requires_max_(APC_LEVEL)
+    UINT64 NativeGetPhysicalAddress(UINT64 DirectoryTableBase, UINT64 VirtualAddress);
 }
 
 namespace Mdl {

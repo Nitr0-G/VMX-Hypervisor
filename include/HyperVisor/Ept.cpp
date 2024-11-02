@@ -1,4 +1,5 @@
 #include "Ept.hpp"
+#include <CommonApi/Callable.hpp>
 
 static bool AreRangesIntersects(
     const VMX::MEMORY_RANGE& Range1,

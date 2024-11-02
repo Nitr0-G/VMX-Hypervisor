@@ -18,6 +18,12 @@
     <ClCompile Include="Src\SendIOCTLs.cpp">
       <Filter>Src</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Trace.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\IOCTLRequests.cpp">
+      <Filter>Src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Inc\SelfLoader.hpp">
@@ -26,5 +32,19 @@
     <ClInclude Include="Inc\SendIOCTLs.hpp">
       <Filter>Inc</Filter>
     </ClInclude>
+    <ClInclude Include="Inc\Trace.hpp">
+      <Filter>Inc</Filter>
+    </ClInclude>
+    <ClInclude Include="Inc\IOCTLRequests.hpp">
+      <Filter>Inc</Filter>
+    </ClInclude>
+    <ClInclude Include="Inc\ASMFuncs.hpp">
+      <Filter>Inc</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="Inc\ASMFuncs.asm">
+      <Filter>Inc</Filter>
+    </MASM>
   </ItemGroup>
 </Project>

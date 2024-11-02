@@ -1,7 +1,10 @@
 #pragma once
-#include "Shared/IOCTLs.hpp"
+#include "Driver/Inc/CommonApi/ProcessesUtils.hpp"
 #include "Driver/Inc/Hpv.hpp"
+#include "Driver/Inc/Cr3Get.hpp"
+#include "Shared/IOCTLs.hpp"
 #include "Shared/CtlTypes.hpp"
+#include "CommonApi/MemoryUtils.hpp"
 #include <fltKernel.h>
 
 typedef struct _IOCTL_INFO {

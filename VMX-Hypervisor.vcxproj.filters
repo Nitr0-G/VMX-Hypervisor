@@ -50,6 +50,12 @@
     <Filter Include="Header Files\AddinFrameWorkSample\Shared">
       <UniqueIdentifier>{85fa1fbe-a969-4dd9-b8c6-0a1def0a6014}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\AddinFrameWorkSample\CommonApi">
+      <UniqueIdentifier>{f22d6af1-79f6-4b84-aec4-f7abe8bebdae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\AddinFrameWorkSample\CommonApi">
+      <UniqueIdentifier>{6b91902c-6bdc-4c90-a614-0f2cbd3a6a88}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Inf Include="VMX-Hypervisor.inf">
@@ -89,6 +95,15 @@
     </ClCompile>
     <ClCompile Include="example\Simple example\Driver\Src\IOCTLHandlers.cpp">
       <Filter>Source Files\AddinFrameWorkSample</Filter>
+    </ClCompile>
+    <ClCompile Include="example\Simple example\Driver\Src\Cr3Get.cpp">
+      <Filter>Source Files\AddinFrameWorkSample</Filter>
+    </ClCompile>
+    <ClCompile Include="example\Simple example\Driver\Src\CommonApi\ProcessesUtils.cpp">
+      <Filter>Source Files\AddinFrameWorkSample\CommonApi</Filter>
+    </ClCompile>
+    <ClCompile Include="example\Simple example\Driver\Src\CommonApi\Importer.cpp">
+      <Filter>Source Files\AddinFrameWorkSample\CommonApi</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -161,8 +176,26 @@
     <ClInclude Include="example\Simple example\Shared\CtlTypes.hpp">
       <Filter>Header Files\AddinFrameWorkSample\Shared</Filter>
     </ClInclude>
+    <ClInclude Include="example\Simple example\Shared\WdkTypes.hpp">
+      <Filter>Header Files\AddinFrameWorkSample\Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="example\Simple example\Driver\Inc\Cr3Get.hpp">
+      <Filter>Header Files\AddinFrameWorkSample</Filter>
+    </ClInclude>
+    <ClInclude Include="example\Simple example\Driver\Inc\CommonApi\ProcessesUtils.hpp">
+      <Filter>Header Files\AddinFrameWorkSample\CommonApi</Filter>
+    </ClInclude>
+    <ClInclude Include="example\Simple example\Driver\Inc\CommonApi\Importer.hpp">
+      <Filter>Header Files\AddinFrameWorkSample\CommonApi</Filter>
+    </ClInclude>
+    <ClInclude Include="example\Simple example\AddinApplication\Inc\ASMFuncs.hpp">
+      <Filter>Header Files\AddinFrameWorkSample\CommonApi</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <MASM Include="example\Simple example\AddinApplication\Inc\ASMFuncs.asm">
+      <Filter>Header Files\AddinFrameWorkSample\CommonApi</Filter>
+    </MASM>
     <MASM Include="include\HyperVisor\VMXrun.asm">
       <Filter>Source Files\HyperVisor</Filter>
     </MASM>

@@ -29,7 +29,8 @@ namespace VMCALLS
 {
     enum class VMCALL_INDEX
     {
-        VmmCall
+        VmmCall,
+        MtfEnable
     };
 
     unsigned long long VmmCall(unsigned long long(*Fn)(void* Arg), void* Arg, bool SwitchToCallerAddressSpace = false);

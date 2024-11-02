@@ -1,55 +1,90 @@
-#include <iostream>
+﻿#include <iostream>
+#include <sstream>
 #include <Windows.h>
+#include <map>
 
-#include "SendIOCTLs.hpp"
 #include "SelfLoader.hpp"
-#include "../../Shared/CtlTypes.hpp"
+#include "IOCTLRequests.hpp"
+#include "Trace.hpp"
 
-namespace HyperVisor
+
+static std::map<std::wstring, std::wstring> ParseArguments(std::wstring Command)
 {
-    BOOL WINAPI MvVmmEnable()
-    {
-        return MvSendRequest(Ctls::MvVmmEnable);
-    }
+    std::wstringstream ss(Command);
+    std::wstring token;
+    std::map<std::wstring, std::wstring> args;
 
-    BOOL WINAPI MvVmmDisable()
+    // Считываем аргументы из строки
+    while (ss >> token)
     {
-        return MvSendRequest(Ctls::MvVmmDisable);
-    }
-
-    void LifeCycle()
-    {
-        while (true)
+        if (token[0] == L'-')  // Если токен начинается с '-', это ключ
         {
-            std::wstring Command;
-            std::wcin >> Command;
-            if (Command == L"exit")
+            std::wstring key = token;
+            if (ss >> token)  // Попробуем считать значение
             {
-                HyperVisor::MvVmmDisable();
-                printf("VMX VMM disabled!\r\n");
-
-                break;
+                args[key] = token;  // Сохраняем пару ключ-значение
             }
             else
             {
-                printf("Unknown command!\n");
+                args[key] = L"";  // Если значения нет, сохраняем пустую строку
             }
         }
     }
 
-    void Entry()
+    return args;
+}
+
+void HvLifeCycle()
+{
+    while (true)
     {
-        if (HyperVisor::MvVmmEnable())
+        std::wstring Command;
+        std::getline(std::wcin, Command);
+
+        if (Command == L"exit")
         {
-            printf("VMX VMM enabled!\r\n");
-
-            printf(
-                "Commands:\n"
-                "  exit: disable the hypervisor and exit\n"
-            );
-
-            LifeCycle();
+            // HyperVisor::MvVmmDisable();
+            std::wcout << L"VMX VMM disabled!\r\n";
+            break;
         }
+        else if (Command.find(L"Trace") == 0)
+        {
+            // Убираем команду "Trace" перед парсингом
+            std::wstring argsString = Command.substr(5);  // Убираем "Trace "
+
+            // Парсим аргументы
+            auto args = ParseArguments(argsString);
+
+            // Проверяем наличие необходимых аргументов
+            if (Trace::StartTraceByLaunchArgs(args))
+            {
+                Trace::StartTraceByLaunch(args[L"-path"], args[L"-cmd_args"], (Cr3GetMode)std::stoi(args[L"-mode"]));
+            }
+            else
+            {
+                std::wcout << L"Invalid command format. Use: Trace -path <path> -mode <mode>\n";
+            }
+        }
+        else
+        {
+            std::wcout << L"Unknown command!\n";
+        }
+    }
+}
+
+
+void HvEntry()
+{
+    if (HyperVisor::MvVmmEnable())
+    {
+        printf("VMX VMM enabled!\r\n");
+
+        printf(
+            "Commands:\n"
+            "  exit: disable the hypervisor and exit\n"
+        );
+
+        HvLifeCycle();
     }
 }
 
@@ -91,7 +126,7 @@ int main()
         std::wstring(CurrentFolder + L"VMX-Hypervisor.sys").c_str()
     )) 
     {
-        HyperVisor::Entry();
+        HvEntry();
     }
     else
     {

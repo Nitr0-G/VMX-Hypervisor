@@ -2,6 +2,17 @@
 
 extern volatile LONG KbHandlesCount;
 
+namespace HyperVisor
+{
+    namespace TraceProcess
+    {
+        extern bool RepeatMtfExit;
+        extern bool InMtfExit;
+
+        extern MV_VMM_TRACE_PROCESS_OUT Out;
+    }
+}
+
 namespace IOCTLFuncs
 {
     NTSTATUS FASTCALL MvVmmEnable(_In_ PIOCTL_INFO RequestInfo, _Out_ PSIZE_T ResponseLength)
@@ -9,7 +20,6 @@ namespace IOCTLFuncs
         UNREFERENCED_PARAMETER(RequestInfo);
         UNREFERENCED_PARAMETER(ResponseLength);
         return HyperVisor::Virtualize() ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
-        //return STATUS_SUCCESS;
     }
 
     NTSTATUS FASTCALL MvVmmDisable(_In_ PIOCTL_INFO RequestInfo, _Out_ PSIZE_T ResponseLength)
@@ -17,7 +27,6 @@ namespace IOCTLFuncs
         UNREFERENCED_PARAMETER(RequestInfo);
         UNREFERENCED_PARAMETER(ResponseLength);
         return HyperVisor::Devirtualize() ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
-        //return STATUS_SUCCESS;
     }
 
     NTSTATUS FASTCALL MvGetHandlesCount(IN PIOCTL_INFO RequestInfo, OUT PSIZE_T ResponseLength)
@@ -30,6 +39,141 @@ namespace IOCTLFuncs
         *ResponseLength = sizeof(*Output);
         return STATUS_SUCCESS;
     }
+
+    NTSTATUS FASTCALL MvTranslateProcessVirtualAddrToPhysicalAddr(IN PIOCTL_INFO RequestInfo, OUT PSIZE_T ResponseLength)
+    {
+        if (
+            RequestInfo->InputBufferSize != sizeof(MV_TRANSLATE_PROCESS_VIRTUAL_ADDRESS_TO_PHYSICAL_ADDRESS_IN) ||
+            RequestInfo->OutputBufferSize != sizeof(MV_TRANSLATE_PROCESS_VIRTUAL_ADDRESS_TO_PHYSICAL_ADDRESS_OUT)
+            ) return STATUS_INFO_LENGTH_MISMATCH;
+
+        auto Input = static_cast<PMV_TRANSLATE_PROCESS_VIRTUAL_ADDRESS_TO_PHYSICAL_ADDRESS_IN>(RequestInfo->InputBuffer);
+        auto Output = static_cast<PMV_TRANSLATE_PROCESS_VIRTUAL_ADDRESS_TO_PHYSICAL_ADDRESS_OUT>(RequestInfo->OutputBuffer);
+
+        if (!Input || !Output) return STATUS_INVALID_PARAMETER;
+
+        Output->PhysicalAddress = reinterpret_cast<WdkTypes::PVOID>(
+            PhysicalMemory::GetPhysicalAddress(
+                reinterpret_cast<PVOID>(Input->VirtualAddress),
+                reinterpret_cast<PEPROCESS>(Input->Process)
+            )
+            );
+
+        *ResponseLength = RequestInfo->OutputBufferSize;
+
+        return Output->PhysicalAddress
+            ? STATUS_SUCCESS
+            : STATUS_UNSUCCESSFUL;
+    }
+
+    NTSTATUS FASTCALL MvVmmInterceptPage(IN PIOCTL_INFO RequestInfo, OUT PSIZE_T ResponseLength)
+    {
+        UNREFERENCED_PARAMETER(ResponseLength);
+
+        if (RequestInfo->InputBufferSize != sizeof(MV_VMM_INTERCEPT_PAGE_IN))
+            return STATUS_INFO_LENGTH_MISMATCH;
+
+        auto Input = static_cast<PMV_VMM_INTERCEPT_PAGE_IN>(RequestInfo->InputBuffer);
+        bool Status = HyperVisor::InterceptPage(
+            Input->PhysicalAddress,
+            Input->OnReadPhysicalAddress,
+            Input->OnWritePhysicalAddress,
+            Input->OnExecutePhysicalAddress,
+            Input->OnExecuteReadPhysicalAddress,
+            Input->OnExecuteWritePhysicalAddress
+        );
+
+        return Status ? STATUS_SUCCESS : STATUS_NOT_SUPPORTED;
+    }
+
+    NTSTATUS FASTCALL MvVmmDeinterceptPage(IN PIOCTL_INFO RequestInfo, OUT PSIZE_T ResponseLength)
+    {
+        UNREFERENCED_PARAMETER(ResponseLength);
+
+        if (RequestInfo->InputBufferSize != sizeof(MV_VMM_DEINTERCEPT_PAGE_IN))
+            return STATUS_INFO_LENGTH_MISMATCH;
+
+        auto Input = static_cast<PMV_VMM_DEINTERCEPT_PAGE_IN>(RequestInfo->InputBuffer);
+        bool Status = HyperVisor::DeinterceptPage(Input->PhysicalAddress);
+
+        return Status ? STATUS_SUCCESS : STATUS_NOT_SUPPORTED;
+    }
+
+    NTSTATUS FASTCALL MvVmmTraceProcess(IN PIOCTL_INFO RequestInfo, OUT PSIZE_T ResponseLength)
+    {
+        if (
+            RequestInfo->InputBufferSize != sizeof(MV_VMM_TRACE_PROCESS_IN) ||
+            RequestInfo->OutputBufferSize != sizeof(MV_VMM_TRACE_PROCESS_OUT)
+            ) return STATUS_INFO_LENGTH_MISMATCH;
+
+        auto Input = static_cast<PMV_VMM_TRACE_PROCESS_IN>(RequestInfo->InputBuffer);
+        auto Output = static_cast<PMV_VMM_TRACE_PROCESS_OUT>(RequestInfo->OutputBuffer);
+
+        if (!Input || !Output || !Input->Cr3 && !Input->AddrStart && !Input->AddrEnd) return STATUS_INVALID_PARAMETER;
+
+        NTSTATUS Status = STATUS_SUCCESS;
+        if (!HyperVisor::TraceProcess::InMtfExit)
+        {
+            Status = HyperVisor::Trace(Input, Output) ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+        }
+        else
+        {
+            HyperVisor::TraceProcess::RepeatMtfExit = true;
+            HyperVisor::TraceProcess::InMtfExit = false;
+        }
+
+        for (;;)
+        {
+            if (HyperVisor::TraceProcess::InMtfExit) 
+            { 
+                break;
+            }
+        }
+
+        *ResponseLength = RequestInfo->OutputBufferSize;
+        return Status;
+    }
+
+    NTSTATUS FASTCALL MvGetProcessCr3(IN PIOCTL_INFO RequestInfo, OUT PSIZE_T ResponseLength)
+    {
+        if (
+            RequestInfo->InputBufferSize != sizeof(MV_GET_PROCESS_CR3_IN) ||
+            RequestInfo->OutputBufferSize != sizeof(MV_GET_PROCESS_CR3_OUT)
+            ) return STATUS_INFO_LENGTH_MISMATCH;
+
+        auto Input = static_cast<PMV_GET_PROCESS_CR3_IN>(RequestInfo->InputBuffer);
+        auto Output = static_cast<PMV_GET_PROCESS_CR3_OUT>(RequestInfo->OutputBuffer);
+
+        if (!Input || !Output || !Input->ProcessId) return STATUS_INVALID_PARAMETER;
+
+        PEPROCESS Process = Processes::Descriptors::GetEPROCESS(reinterpret_cast<HANDLE>(Input->ProcessId));
+        if (!Process) return STATUS_NOT_FOUND;
+
+        Output->Cr3 = Cr3Getter::GetProcessCr3(Process, Input->Mode);
+
+        *ResponseLength = RequestInfo->OutputBufferSize;
+        return STATUS_SUCCESS;
+    }
+
+    NTSTATUS FASTCALL MvNativeTranslateProcessVirtualAddrToPhysicalAddr(IN PIOCTL_INFO RequestInfo, OUT PSIZE_T ResponseLength)
+    {
+        if (
+            RequestInfo->InputBufferSize != sizeof(MV_NATIVE_TRANSLATE_PROCESS_VIRTUAL_ADDRESS_TO_PHYSICAL_ADDRESS_IN) ||
+            RequestInfo->OutputBufferSize != sizeof(MV_NATIVE_TRANSLATE_PROCESS_VIRTUAL_ADDRESS_TO_PHYSICAL_ADDRESS_OUT)
+            ) return STATUS_INFO_LENGTH_MISMATCH;
+
+        auto Input = static_cast<PMV_NATIVE_TRANSLATE_PROCESS_VIRTUAL_ADDRESS_TO_PHYSICAL_ADDRESS_IN>(RequestInfo->InputBuffer);
+        auto Output = static_cast<PMV_NATIVE_TRANSLATE_PROCESS_VIRTUAL_ADDRESS_TO_PHYSICAL_ADDRESS_OUT>(RequestInfo->OutputBuffer);
+
+        if (!Input || !Output || !Input->Cr3 && !Input->VirtualAddress) return STATUS_INVALID_PARAMETER;
+
+        UINT64 PhysicalAddress = PhysicalMemory::NativeGetPhysicalAddress(Input->Cr3, Input->VirtualAddress);
+        if (!PhysicalAddress) return STATUS_NOT_FOUND;
+
+        Output->PhysicalAddress = PhysicalAddress;
+        *ResponseLength = RequestInfo->OutputBufferSize;
+        return STATUS_SUCCESS;
+    }
 }
 
 NTSTATUS FASTCALL DispatchIOCTL(IN PIOCTL_INFO RequestInfo, OUT PSIZE_T ResponseLength)
@@ -39,9 +183,19 @@ NTSTATUS FASTCALL DispatchIOCTL(IN PIOCTL_INFO RequestInfo, OUT PSIZE_T Response
         // Hypervisor:
         IOCTLFuncs::MvVmmEnable,
         IOCTLFuncs::MvVmmDisable,
+        IOCTLFuncs::MvVmmInterceptPage,
+        IOCTLFuncs::MvVmmDeinterceptPage,
+        IOCTLFuncs::MvVmmTraceProcess,
 
         // Driver management:
-        IOCTLFuncs::MvGetHandlesCount
+        IOCTLFuncs::MvGetHandlesCount,
+
+        // Physical memory:
+        IOCTLFuncs::MvTranslateProcessVirtualAddrToPhysicalAddr,
+        IOCTLFuncs::MvNativeTranslateProcessVirtualAddrToPhysicalAddr,
+
+        // Processes & Threads:
+        IOCTLFuncs::MvGetProcessCr3
     };
 
     USHORT Index = EXTRACT_CTL_CODE(RequestInfo->ControlCode) - CTL_BASE;
