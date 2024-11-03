@@ -457,8 +457,8 @@ namespace VmExit {
     }
 
     _IRQL_requires_same_
-        _IRQL_requires_min_(DISPATCH_LEVEL)
-        static VMM_STATUS ExceptionOrNmiHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
+    _IRQL_requires_min_(DISPATCH_LEVEL)
+    static VMM_STATUS ExceptionOrNmiHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
     {
         UNREFERENCED_PARAMETER(Private);
         UNREFERENCED_PARAMETER(Context);
@@ -585,8 +585,8 @@ namespace VmExit {
     }
 
     _IRQL_requires_same_
-        _IRQL_requires_min_(DISPATCH_LEVEL)
-        static VMM_STATUS RdmsrHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
+    _IRQL_requires_min_(DISPATCH_LEVEL)
+    static VMM_STATUS RdmsrHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
     {
         UNREFERENCED_PARAMETER(Private);
         UNREFERENCED_PARAMETER(Rip);
@@ -611,8 +611,8 @@ namespace VmExit {
     }
 
     _IRQL_requires_same_
-        _IRQL_requires_min_(DISPATCH_LEVEL)
-        static VMM_STATUS WrmsrHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
+    _IRQL_requires_min_(DISPATCH_LEVEL)
+    static VMM_STATUS WrmsrHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
     {
         UNREFERENCED_PARAMETER(Private);
         UNREFERENCED_PARAMETER(Rip);
@@ -629,8 +629,8 @@ namespace VmExit {
     }
 
     _IRQL_requires_same_
-        _IRQL_requires_min_(DISPATCH_LEVEL)
-        static VMM_STATUS VmxRelatedHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
+    _IRQL_requires_min_(DISPATCH_LEVEL)
+    static VMM_STATUS VmxRelatedHandler(__inout VMX::PRIVATE_VM_DATA* Private, __inout GuestContext* Context, unsigned long long Rip, __inout_opt bool& RepeatInstruction)
     {
         UNREFERENCED_PARAMETER(Private);
         UNREFERENCED_PARAMETER(Context);
@@ -892,10 +892,29 @@ namespace HyperVisor
         PMV_VMM_TRACE_PROCESS_OUT Output
     )
     {
-        HyperVisor::TraceProcess::EnabledMtfTrace = true;
-        HyperVisor::TraceProcess::In = Input;
+        //HyperVisor::TraceProcess::EnabledMtfTrace = true;
+        //HyperVisor::TraceProcess::In = Input;
         HyperVisor::TraceProcess::Out = Output;
 
+        return true;
+    }
+
+    bool InitTrace(
+        PMV_VMM_TRACE_PROCESS_IN Input
+    )
+    {
+        HyperVisor::TraceProcess::EnabledMtfTrace = true;
+
+        PMV_VMM_TRACE_PROCESS_IN pInAllocatedMemory = (PMV_VMM_TRACE_PROCESS_IN)ExAllocatePoolWithTag(NonPagedPoolNx, sizeof(MV_VMM_TRACE_PROCESS_IN), 'TPIN');
+        if (!pInAllocatedMemory) { return false; }
+
+        RtlCopyMemory(pInAllocatedMemory, Input, sizeof(MV_VMM_TRACE_PROCESS_IN));
+        HyperVisor::TraceProcess::In = pInAllocatedMemory;
+
+        PMV_VMM_TRACE_PROCESS_OUT pOutAllocatedMemory = (PMV_VMM_TRACE_PROCESS_OUT)ExAllocatePoolWithTag(NonPagedPoolNx, sizeof(MV_VMM_TRACE_PROCESS_OUT), 'TOUT');
+        if (!pOutAllocatedMemory) { return false; }
+
+        HyperVisor::TraceProcess::Out = pOutAllocatedMemory;
         return true;
     }
 }

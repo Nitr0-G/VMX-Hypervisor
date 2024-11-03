@@ -10,17 +10,18 @@ namespace Ctls
         /* 2 */ MvVmmInterceptPage,
         /* 3 */ MvVmmDeinterceptPage,
         /* 4 */ MvVmmTraceProcess,
+        /* 5 */ MvVmmInitTraceProcess,
 
         // Driver management:
-        /* 5 */ MvGetHandlesCount,
+        /* 6 */ MvGetHandlesCount,
 
         // Physical memory:
-        /* 6 */ MvTranslateProcessVirtualAddrToPhysicalAddr,
-        /* 7 */ MvNativeTranslateProcessVirtualAddrToPhysicalAddr,
+        /* 7 */ MvTranslateProcessVirtualAddrToPhysicalAddr,
+        /* 8 */ MvNativeTranslateProcessVirtualAddrToPhysicalAddr,
 
         // Processes & Threads:
-        /* 8 */ MvGetProcessCr3,
-        /* 9 */ MvGetEprocess,
+        /* 9 */ MvGetProcessCr3,
+        /* 10 */ MvGetEprocess,
     };
 }
 

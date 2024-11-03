@@ -57,5 +57,11 @@ namespace HyperVisor
         PVOID AddrStart,
         PVOID AddrEnd,
         PMV_VMM_TRACE_PROCESS_OUT pOutput
+   );
+
+    BOOL WINAPI MvVmmInitTraceProcess(
+        UINT64 Cr3,
+        PVOID AddrStart,
+        PVOID AddrEnd
     );
 }

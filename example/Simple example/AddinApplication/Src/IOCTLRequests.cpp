@@ -124,4 +124,19 @@ namespace HyperVisor
         pOutput = &Output;
         return Status;
     }
+
+    BOOL WINAPI MvVmmInitTraceProcess(
+        UINT64 Cr3,
+        PVOID AddrStart,
+        PVOID AddrEnd
+    )
+    {
+        MV_VMM_TRACE_PROCESS_IN Input = {};
+        MV_VMM_TRACE_PROCESS_OUT Output = {};
+        Input.Cr3 = Cr3;
+        Input.AddrStart = AddrStart;
+        Input.AddrEnd = AddrEnd;
+        BOOL Status = MvSendRequest(Ctls::MvVmmInitTraceProcess, &Input, sizeof(Input));
+        return Status;
+    }
 }

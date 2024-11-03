@@ -23,4 +23,8 @@ namespace HyperVisor {
         PMV_VMM_TRACE_PROCESS_IN Input,
         PMV_VMM_TRACE_PROCESS_OUT Output
     );
+
+    bool InitTrace(
+        PMV_VMM_TRACE_PROCESS_IN Input
+    );
 }

@@ -6,79 +6,6 @@ bool Trace::StartTraceByLaunchArgs(std::map<std::wstring, std::wstring>& args)
 	return args.count(L"-path") > 0 && args.count(L"-cmd_args") >= 0 && args.count(L"-mode") > 0;
 }
 
-//void* GetFuncPtr(const void* Func)
-//{
-//    if (!Func) return nullptr;
-//    const auto* FuncDataPtr = reinterpret_cast<const unsigned char*>(Func);
-//    if (*FuncDataPtr == 0xE9)
-//    {
-//        auto Offset = *reinterpret_cast<const int*>(FuncDataPtr + 1);
-//        return const_cast<unsigned char*>((FuncDataPtr + 5) + Offset);
-//    }
-//    else
-//    {
-//        return const_cast<void*>(Func);
-//    }
-//}
-//
-//#pragma section(".hidden", read, execute, nopage)
-//__declspec(code_seg(".hidden")) static void MtfEnableHiddenFunc()
-//{
-//    ASMmv_vmcall((uint64_t)1, 0, 0, 0);
-//}
-//
-//bool Trace::EnableOn(uint64_t PhysicalAddress)
-//{
-//    constexpr unsigned int PageSize = 4096;
-//
-//    //volatile PBYTE Read = reinterpret_cast<PBYTE>(VirtualAlloc(NULL, PageSize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
-//    //volatile PBYTE Write = reinterpret_cast<PBYTE>(VirtualAlloc(NULL, PageSize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
-//    volatile PBYTE WriteExecute = reinterpret_cast<PBYTE>(VirtualAlloc(NULL, PageSize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
-//    volatile PBYTE Execute = reinterpret_cast<PBYTE>(GetFuncPtr(MtfEnableHiddenFunc));
-//
-//    //__assume(Read != 0);
-//    //__assume(Write != 0);
-//    __assume(WriteExecute != 0);
-//
-//    //VirtualLock(Read, PageSize);
-//    //VirtualLock(Write, PageSize);
-//    VirtualLock(Execute, PageSize);
-//    VirtualLock(WriteExecute, PageSize);
-//
-//    //memset(Read, 0xFF, PageSize);
-//    //memset(Write, 0xEE, PageSize);
-//    memcpy(WriteExecute, Execute, PageSize);
-//
-//    DWORD OldProtect = 0;
-//    VirtualProtect(Execute, PageSize, PAGE_EXECUTE_READWRITE, &OldProtect);
-//    *Execute = *Execute;
-//
-//    WdkTypes::PVOID64 ReadPa = 0, WritePa = 0, WriteExecutePa = 0, ExecutePa = 0;
-//    //PhysicalMemory::MvNativeTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(Read), &ReadPa);//IOCTL  
-//    //PhysicalMemory::MvNativeTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(Write), &WritePa);//IOCTL  
-//    PhysicalMemory::MvNativeTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(WriteExecute), &WriteExecutePa);//IOCTL  
-//    PhysicalMemory::MvNativeTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(Execute), &ExecutePa);//IOCTL  
-//
-//    printf("Original bytes: 0x%X\n", static_cast<unsigned int>(*Execute));
-//
-//    HyperVisor::MvVmmInterceptPage(PhysicalAddress, ReadPa, WritePa, ExecutePa, ExecutePa, WriteExecutePa);//IOCTL    
-//    //printf("Bytes after intercept: 0x%X\n", static_cast<unsigned int>(*Execute));
-//    //printf("Bytes after call: 0x%X\n", static_cast<unsigned int>(*Execute));
-//    //printf("Write-interceptor: W:0x%X WX:0x%X\n", static_cast<unsigned int>(*Write), static_cast<unsigned int>(*WriteExecute));
-//    //HyperVisor::MvVmmDeinterceptPage(ExecutePa);//IOCTL  
-//
-//    //printf("Bytes after deintercept: 0x%X\n", static_cast<unsigned int>(*Execute));
-//
-//    //VirtualUnlock(Execute, PageSize);
-//    //VirtualUnlock(Write, PageSize);
-//    //VirtualUnlock(Read, PageSize);
-//
-//    //VirtualFree(Write, 0, MEM_RELEASE);
-//    //VirtualFree(Read, 0, MEM_RELEASE);
-//
-//    return true;
-//}
-
 void* GetFuncPtr(const void* Func)
 {
     if (!Func) return nullptr;
@@ -95,69 +22,147 @@ void* GetFuncPtr(const void* Func)
 }
 
 #pragma section(".hidden", read, execute, nopage)
-__declspec(code_seg(".hidden")) unsigned int HiddenFunc()
+__declspec(code_seg(".hidden")) static void MtfEnableHiddenFunc()
 {
-    printf("Called from hidden func!\n");
-    for (unsigned int i = 0; i < 100; ++i)
-    {
-        volatile BYTE* Self = reinterpret_cast<PBYTE>(GetFuncPtr(HiddenFunc));
-        *Self = 0x55;
-    }
-    return 0x1EE7C0DE;
+    ASMmv_vmcall((uint64_t)1, 0, 0, 0);
 }
 
-VOID TestHvPageInterception()
+bool Trace::EnableOn(uint64_t PhysicalAddress)
 {
     constexpr unsigned int PageSize = 4096;
 
-    volatile PBYTE Read = reinterpret_cast<PBYTE>(VirtualAlloc(NULL, PageSize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
-    volatile PBYTE Write = reinterpret_cast<PBYTE>(VirtualAlloc(NULL, PageSize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
-    volatile PBYTE WriteExecute = reinterpret_cast<PBYTE>(VirtualAlloc(NULL, PageSize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
-    volatile PBYTE Execute = reinterpret_cast<PBYTE>(GetFuncPtr(HiddenFunc));
+    //volatile PBYTE Read = reinterpret_cast<PBYTE>(VirtualAlloc(NULL, PageSize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
+    //volatile PBYTE Write = reinterpret_cast<PBYTE>(VirtualAlloc(NULL, PageSize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
+    //volatile PBYTE WriteExecute = reinterpret_cast<PBYTE>(VirtualAlloc(NULL, PageSize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
+    volatile PBYTE Execute = reinterpret_cast<PBYTE>(GetFuncPtr(MtfEnableHiddenFunc));
 
-    __assume(Read != 0);
-    __assume(Write != 0);
-    __assume(WriteExecute != 0);
+    //__assume(Read != 0);
+    //__assume(Write != 0);
+    //__assume(WriteExecute != 0);
 
-    VirtualLock(Read, PageSize);
-    VirtualLock(Write, PageSize);
+    //VirtualLock(Read, PageSize);
+    //VirtualLock(Write, PageSize);
     VirtualLock(Execute, PageSize);
-    VirtualLock(WriteExecute, PageSize);
+    //VirtualLock(WriteExecute, PageSize);
 
-    memset(Read, 0xFF, PageSize);
-    memset(Write, 0xEE, PageSize);
-    memcpy(WriteExecute, Execute, PageSize);
+    //memset(Read, 0xFF, PageSize);
+    //memset(Write, 0xEE, PageSize);
+    //memcpy(WriteExecute, Execute, PageSize);
 
     DWORD OldProtect = 0;
     VirtualProtect(Execute, PageSize, PAGE_EXECUTE_READWRITE, &OldProtect);
     *Execute = *Execute;
 
     WdkTypes::PVOID64 ReadPa = 0, WritePa = 0, WriteExecutePa = 0, ExecutePa = 0;
-    PhysicalMemory::MvTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(Read), &ReadPa);//IOCTL  
-    PhysicalMemory::MvTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(Write), &WritePa);//IOCTL  
-    PhysicalMemory::MvTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(WriteExecute), &WriteExecutePa);//IOCTL  
-    PhysicalMemory::MvTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(Execute), &ExecutePa);//IOCTL  
+    //PhysicalMemory::MvNativeTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(Read), &ReadPa);//IOCTL  
+    //PhysicalMemory::MvNativeTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(Write), &WritePa);//IOCTL  
+    //PhysicalMemory::MvNativeTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(WriteExecute), &WriteExecutePa);//IOCTL  
+    PhysicalMemory::MvNativeTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(Execute), &ExecutePa);//IOCTL  
 
     printf("Original bytes: 0x%X\n", static_cast<unsigned int>(*Execute));
 
-    HyperVisor::MvVmmInterceptPage(ExecutePa, ReadPa, WritePa, ExecutePa, ExecutePa, WriteExecutePa);//IOCTL    
-    printf("Bytes after intercept: 0x%X\n", static_cast<unsigned int>(*Execute));
-    *Execute = 0x40;
-    HiddenFunc();
-    printf("Bytes after call: 0x%X\n", static_cast<unsigned int>(*Execute));
-    printf("Write-interceptor: W:0x%X WX:0x%X\n", static_cast<unsigned int>(*Write), static_cast<unsigned int>(*WriteExecute));
-    HyperVisor::MvVmmDeinterceptPage(ExecutePa);//IOCTL  
+    HyperVisor::MvVmmInterceptPage(PhysicalAddress, 0, 0, ExecutePa, 0, 0);//IOCTL    
+    //printf("Bytes after intercept: 0x%X\n", static_cast<unsigned int>(*Execute));
+    //printf("Bytes after call: 0x%X\n", static_cast<unsigned int>(*Execute));
+    //printf("Write-interceptor: W:0x%X WX:0x%X\n", static_cast<unsigned int>(*Write), static_cast<unsigned int>(*WriteExecute));
+    //HyperVisor::MvVmmDeinterceptPage(ExecutePa);//IOCTL  
 
-    printf("Bytes after deintercept: 0x%X\n", static_cast<unsigned int>(*Execute));
+    //printf("Bytes after deintercept: 0x%X\n", static_cast<unsigned int>(*Execute));
 
-    VirtualUnlock(Execute, PageSize);
-    VirtualUnlock(Write, PageSize);
-    VirtualUnlock(Read, PageSize);
+    //VirtualUnlock(Execute, PageSize);
+    //VirtualUnlock(Write, PageSize);
+    //VirtualUnlock(Read, PageSize);
 
-    VirtualFree(Write, 0, MEM_RELEASE);
-    VirtualFree(Read, 0, MEM_RELEASE);
+    //VirtualFree(Write, 0, MEM_RELEASE);
+    //VirtualFree(Read, 0, MEM_RELEASE);
+
+    return true;
 }
 
+//void* GetFuncPtr(const void* Func)
+//{
+//    if (!Func) return nullptr;
+//    const auto* FuncDataPtr = reinterpret_cast<const unsigned char*>(Func);
+//    if (*FuncDataPtr == 0xE9)
+//    {
+//        auto Offset = *reinterpret_cast<const int*>(FuncDataPtr + 1);
+//        return const_cast<unsigned char*>((FuncDataPtr + 5) + Offset);
+//    }
+//    else
+//    {
+//        return const_cast<void*>(Func);
+//    }
+//}
+//
+//#pragma section(".hidden", read, execute, nopage)
+//__declspec(code_seg(".hidden")) unsigned int HiddenFunc()
+//{
+//    printf("Called from hidden func!\n");
+//    for (unsigned int i = 0; i < 100; ++i)
+//    {
+//        volatile BYTE* Self = reinterpret_cast<PBYTE>(GetFuncPtr(HiddenFunc));
+//        *Self = 0x55;
+//    }
+//    return 0x1EE7C0DE;
+//}
+//
+//VOID TestHvPageInterception()
+//{
+//    constexpr unsigned int PageSize = 4096;
+//
+//    volatile PBYTE Read = reinterpret_cast<PBYTE>(VirtualAlloc(NULL, PageSize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
+//    volatile PBYTE Write = reinterpret_cast<PBYTE>(VirtualAlloc(NULL, PageSize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
+//    volatile PBYTE WriteExecute = reinterpret_cast<PBYTE>(VirtualAlloc(NULL, PageSize, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE));
+//    volatile PBYTE Execute = reinterpret_cast<PBYTE>(GetFuncPtr(HiddenFunc));
+//
+//    __assume(Read != 0);
+//    __assume(Write != 0);
+//    __assume(WriteExecute != 0);
+//
+//    VirtualLock(Read, PageSize);
+//    VirtualLock(Write, PageSize);
+//    VirtualLock(Execute, PageSize);
+//    VirtualLock(WriteExecute, PageSize);
+//
+//    memset(Read, 0xFF, PageSize);
+//    memset(Write, 0xEE, PageSize);
+//    memcpy(WriteExecute, Execute, PageSize);
+//
+//    DWORD OldProtect = 0;
+//    VirtualProtect(Execute, PageSize, PAGE_EXECUTE_READWRITE, &OldProtect);
+//    *Execute = *Execute;
+//
+//    WdkTypes::PVOID64 ReadPa = 0, WritePa = 0, WriteExecutePa = 0, ExecutePa = 0;
+//    PhysicalMemory::MvTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(Read), &ReadPa);//IOCTL  
+//    PhysicalMemory::MvTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(Write), &WritePa);//IOCTL  
+//    PhysicalMemory::MvTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(WriteExecute), &WriteExecutePa);//IOCTL  
+//    PhysicalMemory::MvTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(Execute), &ExecutePa);//IOCTL  
+//
+//    printf("Original bytes: 0x%X\n", static_cast<unsigned int>(*Execute));
+//
+//    HyperVisor::MvVmmInterceptPage(ExecutePa, ReadPa, WritePa, ExecutePa, ExecutePa, WriteExecutePa);//IOCTL    
+//    printf("Bytes after intercept: 0x%X\n", static_cast<unsigned int>(*Execute));
+//    *Execute = 0x40;
+//    HiddenFunc();
+//    printf("Bytes after call: 0x%X\n", static_cast<unsigned int>(*Execute));
+//    printf("Write-interceptor: W:0x%X WX:0x%X\n", static_cast<unsigned int>(*Write), static_cast<unsigned int>(*WriteExecute));
+//    HyperVisor::MvVmmDeinterceptPage(ExecutePa);//IOCTL  
+//
+//    printf("Bytes after deintercept: 0x%X\n", static_cast<unsigned int>(*Execute));
+//
+//    VirtualUnlock(Execute, PageSize);
+//    VirtualUnlock(Write, PageSize);
+//    VirtualUnlock(Read, PageSize);
+//
+//    VirtualFree(Write, 0, MEM_RELEASE);
+//    VirtualFree(Read, 0, MEM_RELEASE);
+//}
+
+#define FIRST_TIME_HERE ([] { \
+    static bool is_first_time = true; \
+    auto was_first_time = is_first_time; \
+    is_first_time = false; \
+    return was_first_time; } ())
 
 bool Trace::StartTraceByLaunch(std::wstring Path, std::wstring CmdArgs, Cr3GetMode Mode)
 {
@@ -185,15 +190,22 @@ bool Trace::StartTraceByLaunch(std::wstring Path, std::wstring CmdArgs, Cr3GetMo
     uint64_t Cr3 = {};
     Process::MvGetProcessCr3(pi.dwProcessId, &Cr3, Mode);
 
-    //uint64_t PhysicalAddress = {};
+    PVOID EPROCESS = nullptr;
+    Process::MvGetEProcess(pi.dwProcessId, EPROCESS);
+    uint64_t PhysicalAddress = {};
     //PhysicalMemory::MvNativeTranslateProcessVirtualAddrToPhysicalAddr(Cr3, 0x15B284020, &PhysicalAddress);
+    PhysicalMemory::MvTranslateProcessVirtualAddrToPhysicalAddr((WdkTypes::PEPROCESS)EPROCESS, 0x15B284020, &PhysicalAddress);  
 
-    //EnableOn(PhysicalAddress);
+    EnableOn(PhysicalAddress);
     //Process::
-    //ResumeThread(pi.hThread);
-    TestHvPageInterception();
+    //TestHvPageInterception();
     for (;;)
     {
+        HyperVisor::MvVmmInitTraceProcess(Cr3, (PVOID)0x15B284020, (PVOID)0x15B28402F);
+        if (FIRST_TIME_HERE) {
+            ResumeThread(pi.hThread);
+        }
+
         PMV_VMM_TRACE_PROCESS_OUT Output = nullptr;
         HyperVisor::MvVmmTraceProcess(Cr3, (PVOID)0x15B284020, (PVOID)0x15B28402F, Output);
 
@@ -204,7 +216,7 @@ bool Trace::StartTraceByLaunch(std::wstring Path, std::wstring CmdArgs, Cr3GetMo
             break;
         }
     }
-    //HyperVisor::MvVmmDeinterceptPage(PhysicalAddress);
+    HyperVisor::MvVmmDeinterceptPage(PhysicalAddress);
 
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);

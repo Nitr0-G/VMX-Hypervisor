@@ -9,7 +9,7 @@ namespace HyperVisor
         extern bool RepeatMtfExit;
         extern bool InMtfExit;
 
-        extern MV_VMM_TRACE_PROCESS_OUT Out;
+        extern PMV_VMM_TRACE_PROCESS_OUT Out;
     }
 }
 
@@ -112,23 +112,46 @@ namespace IOCTLFuncs
         if (!Input || !Output || !Input->Cr3 && !Input->AddrStart && !Input->AddrEnd) return STATUS_INVALID_PARAMETER;
 
         NTSTATUS Status = STATUS_SUCCESS;
-        if (!HyperVisor::TraceProcess::InMtfExit)
-        {
-            Status = HyperVisor::Trace(Input, Output) ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
-        }
-        else
-        {
-            HyperVisor::TraceProcess::RepeatMtfExit = true;
-            HyperVisor::TraceProcess::InMtfExit = false;
-        }
+
+        //if (!HyperVisor::TraceProcess::InMtfExit)
+        //{
+        //    //Status = HyperVisor::Trace(Input, Output) ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
+        //}
+        //else
+        //{
+        //    HyperVisor::TraceProcess::RepeatMtfExit = true;
+        //    HyperVisor::TraceProcess::InMtfExit = false;
+        //}
 
         for (;;)
         {
             if (HyperVisor::TraceProcess::InMtfExit) 
             { 
+                RtlCopyMemory(Output, HyperVisor::TraceProcess::Out, sizeof(MV_VMM_TRACE_PROCESS_OUT));
+                RtlZeroMemory(HyperVisor::TraceProcess::Out, sizeof(MV_VMM_TRACE_PROCESS_OUT));
+
+                HyperVisor::TraceProcess::RepeatMtfExit = true;
+                HyperVisor::TraceProcess::InMtfExit = false;
+                
                 break;
             }
         }
+
+        *ResponseLength = RequestInfo->OutputBufferSize;
+        return Status;
+    }
+
+    NTSTATUS FASTCALL MvVmmInitTraceProcess(IN PIOCTL_INFO RequestInfo, OUT PSIZE_T ResponseLength)
+    {
+        if (
+            RequestInfo->InputBufferSize != sizeof(MV_VMM_TRACE_PROCESS_IN)
+            ) return STATUS_INFO_LENGTH_MISMATCH;
+
+        auto Input = static_cast<PMV_VMM_TRACE_PROCESS_IN>(RequestInfo->InputBuffer);
+
+        if (!Input || !Input->Cr3 && !Input->AddrStart && !Input->AddrEnd) return STATUS_INVALID_PARAMETER;
+
+        NTSTATUS Status = HyperVisor::InitTrace(Input) ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
 
         *ResponseLength = RequestInfo->OutputBufferSize;
         return Status;
@@ -206,6 +229,7 @@ NTSTATUS FASTCALL DispatchIOCTL(IN PIOCTL_INFO RequestInfo, OUT PSIZE_T Response
         IOCTLFuncs::MvVmmInterceptPage,
         IOCTLFuncs::MvVmmDeinterceptPage,
         IOCTLFuncs::MvVmmTraceProcess,
+        IOCTLFuncs::MvVmmInitTraceProcess,
 
         // Driver management:
         IOCTLFuncs::MvGetHandlesCount,
