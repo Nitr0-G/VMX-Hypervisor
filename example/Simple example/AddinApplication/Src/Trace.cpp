@@ -94,17 +94,17 @@ bool Trace::EnableOn(uint64_t PhysicalAddress)
 //    }
 //}
 //
-//#pragma section(".hidden", read, execute, nopage)
-//__declspec(code_seg(".hidden")) unsigned int HiddenFunc()
-//{
-//    printf("Called from hidden func!\n");
-//    for (unsigned int i = 0; i < 100; ++i)
-//    {
-//        volatile BYTE* Self = reinterpret_cast<PBYTE>(GetFuncPtr(HiddenFunc));
-//        *Self = 0x55;
-//    }
-//    return 0x1EE7C0DE;
-//}
+#pragma section(".hidden", read, execute, nopage)
+__declspec(code_seg(".hidden")) unsigned int HiddenFunc()
+{
+    printf("Called from hidden func!\n");
+    for (unsigned int i = 0; i < 100; ++i)
+    {
+        volatile BYTE* Self = reinterpret_cast<PBYTE>(GetFuncPtr(HiddenFunc));
+        *Self = 0x55;
+    }
+    return 0x1EE7C0DE;
+}
 //
 //VOID TestHvPageInterception()
 //{
@@ -190,11 +190,14 @@ bool Trace::StartTraceByLaunch(std::wstring Path, std::wstring CmdArgs, Cr3GetMo
     uint64_t Cr3 = {};
     Process::MvGetProcessCr3(pi.dwProcessId, &Cr3, Mode);
 
+    uint64_t MyCr3 = {};
+    Process::MvGetProcessCr3(GetCurrentProcessId(), &MyCr3, Mode);
+
     //PVOID EPROCESS = nullptr;
     //Process::MvGetEProcess(pi.dwProcessId, EPROCESS);
     uint64_t PhysicalAddress = {};
-    //PhysicalMemory::MvNativeTranslateProcessVirtualAddrToPhysicalAddr(Cr3, 0x15B284020, &PhysicalAddress);
-    PhysicalMemory::MvTranslateProcessVirtualAddrToPhysicalAddr(pi.dwProcessId, 0x15B284020, &PhysicalAddress);
+    PhysicalMemory::MvNativeTranslateProcessVirtualAddrToPhysicalAddr(MyCr3, (WdkTypes::PVOID)GetFuncPtr(HiddenFunc), &PhysicalAddress);
+    //PhysicalMemory::MvTranslateProcessVirtualAddrToPhysicalAddr(pi.dwProcessId, 0x15B284020, &PhysicalAddress);
 
     EnableOn(PhysicalAddress);
     //Process::
