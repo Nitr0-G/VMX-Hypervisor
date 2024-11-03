@@ -57,7 +57,7 @@ bool Trace::EnableOn(uint64_t PhysicalAddress)
     //PhysicalMemory::MvNativeTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(Read), &ReadPa);//IOCTL  
     //PhysicalMemory::MvNativeTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(Write), &WritePa);//IOCTL  
     //PhysicalMemory::MvNativeTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(WriteExecute), &WriteExecutePa);//IOCTL  
-    PhysicalMemory::MvNativeTranslateProcessVirtualAddrToPhysicalAddr(NULL, reinterpret_cast<WdkTypes::PVOID>(Execute), &ExecutePa);//IOCTL  
+    PhysicalMemory::MvTranslateProcessVirtualAddrToPhysicalAddr(GetCurrentProcessId(), reinterpret_cast<WdkTypes::PVOID>(Execute), &ExecutePa);//IOCTL  
 
     printf("Original bytes: 0x%X\n", static_cast<unsigned int>(*Execute));
 
