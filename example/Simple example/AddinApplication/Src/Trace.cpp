@@ -190,11 +190,11 @@ bool Trace::StartTraceByLaunch(std::wstring Path, std::wstring CmdArgs, Cr3GetMo
     uint64_t Cr3 = {};
     Process::MvGetProcessCr3(pi.dwProcessId, &Cr3, Mode);
 
-    PVOID EPROCESS = nullptr;
-    Process::MvGetEProcess(pi.dwProcessId, EPROCESS);
+    //PVOID EPROCESS = nullptr;
+    //Process::MvGetEProcess(pi.dwProcessId, EPROCESS);
     uint64_t PhysicalAddress = {};
     //PhysicalMemory::MvNativeTranslateProcessVirtualAddrToPhysicalAddr(Cr3, 0x15B284020, &PhysicalAddress);
-    PhysicalMemory::MvTranslateProcessVirtualAddrToPhysicalAddr((WdkTypes::PEPROCESS)EPROCESS, 0x15B284020, &PhysicalAddress);  
+    PhysicalMemory::MvTranslateProcessVirtualAddrToPhysicalAddr(pi.dwProcessId, 0x15B284020, &PhysicalAddress);
 
     EnableOn(PhysicalAddress);
     //Process::

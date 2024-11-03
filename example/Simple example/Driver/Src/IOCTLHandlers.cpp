@@ -52,10 +52,12 @@ namespace IOCTLFuncs
 
         if (!Input || !Output) return STATUS_INVALID_PARAMETER;
 
+        PEPROCESS Process = Processes::Descriptors::GetEPROCESS(reinterpret_cast<HANDLE>(Input->ProcessId));
+
         Output->PhysicalAddress = reinterpret_cast<WdkTypes::PVOID>(
             PhysicalMemory::GetPhysicalAddress(
                 reinterpret_cast<PVOID>(Input->VirtualAddress),
-                reinterpret_cast<PEPROCESS>(Input->Process)
+                reinterpret_cast<PEPROCESS>(Process)
             )
             );
 

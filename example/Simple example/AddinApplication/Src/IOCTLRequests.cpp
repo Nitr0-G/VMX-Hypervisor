@@ -3,7 +3,7 @@
 namespace PhysicalMemory
 {
     BOOL WINAPI MvTranslateProcessVirtualAddrToPhysicalAddr(
-        IN OPTIONAL WdkTypes::PEPROCESS Process,
+        IN UINT32 ProcessId,
         IN WdkTypes::PVOID VirtualAddress,
         OUT WdkTypes::PVOID* PhysicalAddress
     )
@@ -11,7 +11,7 @@ namespace PhysicalMemory
         if (!PhysicalAddress) return FALSE;
         MV_TRANSLATE_PROCESS_VIRTUAL_ADDRESS_TO_PHYSICAL_ADDRESS_IN Input = {};
         MV_TRANSLATE_PROCESS_VIRTUAL_ADDRESS_TO_PHYSICAL_ADDRESS_OUT Output = {};
-        Input.Process = Process;
+        Input.ProcessId = ProcessId;
         Input.VirtualAddress = VirtualAddress;
         BOOL Status = MvSendRequest(Ctls::MvTranslateProcessVirtualAddrToPhysicalAddr, &Input, sizeof(Input), &Output, sizeof(Output));
         *PhysicalAddress = Output.PhysicalAddress;
