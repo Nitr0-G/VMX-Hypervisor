@@ -201,7 +201,10 @@ namespace PhysicalMemory {
     BOOLEAN WritePhysicalMemory(OUT PVOID64 PhysicalAddress, IN PVOID Buffer, SIZE_T Length, MEMORY_CACHING_TYPE CachingType);
 
     _IRQL_requires_max_(APC_LEVEL)
-    UINT64 NativeGetPhysicalAddress(UINT64 DirectoryTableBase, UINT64 VirtualAddress);
+    NTSTATUS WinApiReadPhysicalAddress(PVOID TargetAddress, PVOID lpBuffer, SIZE_T Size, SIZE_T* BytesRead);
+
+    _IRQL_requires_max_(APC_LEVEL)
+    UINT64 NativeGetPhysicalAddress(UINT64 directoryTableBase, UINT64 virtualAddress);
 }
 
 namespace Mdl {

@@ -447,50 +447,59 @@ namespace PhysicalMemory {
     }
 
     _IRQL_requires_max_(APC_LEVEL)
-    UINT64 NativeGetPhysicalAddress(UINT64 DirectoryTableBase, UINT64 VirtualAddress)
+    NTSTATUS WinApiReadPhysicalAddress(PVOID TargetAddress, PVOID lpBuffer, SIZE_T Size, SIZE_T* BytesRead)
     {
+        MM_COPY_ADDRESS AddrToRead = { 0 };
+        AddrToRead.PhysicalAddress.QuadPart = (LONGLONG)TargetAddress;
+        return MmCopyMemory(lpBuffer, AddrToRead, Size, MM_COPY_MEMORY_PHYSICAL, BytesRead);
+    }
+
+    _IRQL_requires_max_(APC_LEVEL)
+    UINT64 NativeGetPhysicalAddress(UINT64 directoryTableBase, UINT64 virtualAddress)
+    {
+        directoryTableBase &= ~0xf;
+
         #define PAGE_OFFSET_SIZE 12
         static const UINT64 PMASK = (~0xfull << 8) & 0xfffffffffull;
 
-        DirectoryTableBase &= ~0xf;
+        UINT64 pageOffset = virtualAddress & ~(~0ul << PAGE_OFFSET_SIZE);
+        UINT64 pte = ((virtualAddress >> 12) & (0x1ffll));
+        UINT64 pt = ((virtualAddress >> 21) & (0x1ffll));
+        UINT64 pd = ((virtualAddress >> 30) & (0x1ffll));
+        UINT64 pdp = ((virtualAddress >> 39) & (0x1ffll));
 
-        UINT64 pageOffset = VirtualAddress & ~(~0ul << PAGE_OFFSET_SIZE);
-        UINT64 pte = ((VirtualAddress >> 12) & (0x1ffll));
-        UINT64 pt = ((VirtualAddress >> 21) & (0x1ffll));
-        UINT64 pd = ((VirtualAddress >> 30) & (0x1ffll));
-        UINT64 pdp = ((VirtualAddress >> 39) & (0x1ffll));
-
+        SIZE_T readsize = 0;
         UINT64 pdpe = 0;
-        ReadPhysicalMemory(PVOID(DirectoryTableBase + 8 * pdp), &pdpe, sizeof(pdpe), MEMORY_CACHING_TYPE::MmNonCached);
+        WinApiReadPhysicalAddress(PVOID(directoryTableBase + 8 * pdp), &pdpe, sizeof(pdpe), &readsize);
         if (~pdpe & 1)
             return 0;
 
         UINT64 pde = 0;
-        ReadPhysicalMemory(PVOID((pdpe & PMASK) + 8 * pd), &pde, sizeof(pde), MEMORY_CACHING_TYPE::MmNonCached);
+        WinApiReadPhysicalAddress(PVOID((pdpe & PMASK) + 8 * pd), &pde, sizeof(pde), &readsize);
         if (~pde & 1)
             return 0;
 
         /* 1GB large page, use pde's 12-34 bits */
         if (pde & 0x80)
-            return (pde & (~0ull << 42 >> 12)) + (VirtualAddress & ~(~0ull << 30));
+            return (pde & (~0ull << 42 >> 12)) + (virtualAddress & ~(~0ull << 30));
 
         UINT64 pteAddr = 0;
-        ReadPhysicalMemory(PVOID((pde & PMASK) + 8 * pt), &pteAddr, sizeof(pteAddr), MEMORY_CACHING_TYPE::MmNonCached);
+        WinApiReadPhysicalAddress(PVOID((pde & PMASK) + 8 * pt), &pteAddr, sizeof(pteAddr), &readsize);
         if (~pteAddr & 1)
             return 0;
 
         /* 2MB large page */
         if (pteAddr & 0x80)
-            return (pteAddr & PMASK) + (VirtualAddress & ~(~0ull << 21));
+            return (pteAddr & PMASK) + (virtualAddress & ~(~0ull << 21));
 
-        VirtualAddress = 0;
-        ReadPhysicalMemory(PVOID((pteAddr & PMASK) + 8 * pte), &VirtualAddress, sizeof(VirtualAddress), MEMORY_CACHING_TYPE::MmNonCached);
-        VirtualAddress &= PMASK;
+        virtualAddress = 0;
+        WinApiReadPhysicalAddress(PVOID((pteAddr & PMASK) + 8 * pte), &virtualAddress, sizeof(virtualAddress), &readsize);
+        virtualAddress &= PMASK;
 
-        if (!VirtualAddress)
+        if (!virtualAddress)
             return 0;
 
-        return VirtualAddress + pageOffset;
+        return virtualAddress + pageOffset;
     }
 }
 
